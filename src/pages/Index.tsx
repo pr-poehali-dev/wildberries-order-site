@@ -126,9 +126,11 @@ const Index = () => {
       position: 'Оператор ПВЗ',
       pvzNumber: 'ПВЗ #8279',
       address: 'Москва, ул. Ленина, 15',
+      salary: 0,
     };
   });
   const [tempProfileData, setTempProfileData] = useState(profileData);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -177,6 +179,15 @@ const Index = () => {
   };
 
   const issueOrder = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+      const commission = Math.round(order.totalPrice * 0.3);
+      setProfileData(prev => ({
+        ...prev,
+        salary: prev.salary + commission
+      }));
+    }
+    
     setOrders(orders.map(order => 
       order.id === orderId ? { ...order, status: 'issued' as const } : order
     ));
@@ -812,6 +823,56 @@ const Index = () => {
                       </div>
                       <Icon name="TrendingUp" size={40} className="text-primary opacity-20" />
                     </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Wallet" size={18} className="text-green-600" />
+                        <span className="font-semibold text-sm">Зарплата</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                          {profileData.salary.toLocaleString('ru-RU')} ₽
+                        </p>
+                        <p className="text-xs text-muted-foreground">30% от выданных заказов</p>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => {
+                        if (profileData.salary === 0) {
+                          toast({
+                            title: 'Недостаточно средств',
+                            description: 'Зарплата еще не начислена',
+                            variant: 'destructive',
+                          });
+                          return;
+                        }
+                        setIsWithdrawing(true);
+                        setTimeout(() => {
+                          setProfileData(prev => ({ ...prev, salary: 0 }));
+                          setIsWithdrawing(false);
+                          toast({
+                            title: 'Деньги были выведены!',
+                            description: `Выведено ${profileData.salary.toLocaleString('ru-RU')} ₽`,
+                          });
+                        }, 1000);
+                      }}
+                      disabled={profileData.salary === 0 || isWithdrawing}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90"
+                    >
+                      {isWithdrawing ? (
+                        <>
+                          <Icon name="Loader" size={16} className="mr-2 animate-spin" />
+                          Обработка...
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="CreditCard" size={16} className="mr-2" />
+                          Вывести
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </>
