@@ -101,7 +101,24 @@ const Index = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profileData, setProfileData] = useState(() => {
+    const saved = localStorage.getItem('wildberries_profile');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      name: 'Александр Иванов',
+      position: 'Оператор ПВЗ',
+      pvzNumber: 'ПВЗ #8279',
+      address: 'Москва, ул. Ленина, 15',
+    };
+  });
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('wildberries_profile', JSON.stringify(profileData));
+  }, [profileData]);
 
   useEffect(() => {
     localStorage.setItem('wildberries_orders', JSON.stringify(orders));
@@ -201,13 +218,24 @@ const Index = () => {
               </div>
             </div>
 
-            <Button 
-              onClick={createOrder}
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
-            >
-              <Icon name="Plus" size={20} className="mr-2" />
-              Создать заказ
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={createOrder}
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
+              >
+                <Icon name="Plus" size={20} className="mr-2" />
+                Создать заказ
+              </Button>
+              
+              <Button 
+                onClick={() => setIsProfileOpen(true)}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/10"
+              >
+                <Icon name="User" size={20} className="mr-2" />
+                Профиль
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -321,7 +349,7 @@ const Index = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button 
                               onClick={() => {
                                 setSelectedOrder(order);
@@ -339,6 +367,17 @@ const Index = () => {
                             >
                               <Icon name="Check" size={16} className="mr-2" />
                               Выдать
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsReturnDialogOpen(true);
+                              }}
+                              variant="outline"
+                              className="border-red-500 text-red-600 hover:bg-red-50"
+                            >
+                              <Icon name="Undo2" size={16} className="mr-2" />
+                              Возврат
                             </Button>
                           </div>
                         </div>
@@ -591,6 +630,73 @@ const Index = () => {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Профиль сотрудника</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+                <Icon name="User" className="text-white" size={40} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl">{profileData.name}</h3>
+                <p className="text-sm text-muted-foreground">{profileData.position}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon name="MapPin" size={18} className="text-primary" />
+                  <span className="font-semibold text-sm">Пункт выдачи</span>
+                </div>
+                <p className="text-sm">{profileData.pvzNumber}</p>
+                <p className="text-sm text-muted-foreground">{profileData.address}</p>
+              </div>
+
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon name="BarChart" size={18} className="text-primary" />
+                  <span className="font-semibold text-sm">Статистика сегодня</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-2xl font-bold text-primary">{stats.total}</p>
+                    <p className="text-xs text-muted-foreground">Всего заказов</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-500">{stats.issued}</p>
+                    <p className="text-xs text-muted-foreground">Выдано</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-orange-500">{stats.waiting}</p>
+                    <p className="text-xs text-muted-foreground">Ожидают</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-red-500">{stats.returned}</p>
+                    <p className="text-xs text-muted-foreground">Возвраты</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Эффективность</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {stats.total > 0 ? Math.round((stats.issued / stats.total) * 100) : 0}%
+                    </p>
+                  </div>
+                  <Icon name="TrendingUp" size={40} className="text-primary opacity-20" />
+                </div>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
