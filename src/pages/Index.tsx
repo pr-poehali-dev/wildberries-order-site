@@ -25,6 +25,15 @@ interface Order {
   items: OrderItem[];
   totalPrice: number;
   returnReason?: string;
+  issuedBy?: 'curator' | string;
+}
+
+interface Intern {
+  id: string;
+  name: string;
+  surname: string;
+  salary: number;
+  createdAt: string;
 }
 
 const Index = () => {
@@ -124,6 +133,11 @@ const Index = () => {
     };
   });
 
+  const [interns, setInterns] = useState<Intern[]>(() => {
+    const saved = localStorage.getItem('wildberries_interns');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('wildberries_profile');
     if (saved) {
@@ -144,6 +158,10 @@ const Index = () => {
   const [tempProfileData, setTempProfileData] = useState(profileData);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isInternsOpen, setIsInternsOpen] = useState(false);
+  const [isAddingIntern, setIsAddingIntern] = useState(false);
+  const [internName, setInternName] = useState('');
+  const [internSurname, setInternSurname] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -157,6 +175,10 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('wildberries_orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    localStorage.setItem('wildberries_interns', JSON.stringify(interns));
+  }, [interns]);
 
   const generateBarcode = () => {
     return '8B' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
@@ -195,23 +217,89 @@ const Index = () => {
     });
   };
 
-  const issueOrder = (orderId: string) => {
+  const issueOrder = (orderId: string, issuedBy: 'curator' | string = 'curator') => {
     const order = orders.find(o => o.id === orderId);
     if (order) {
-      const commission = Math.round(order.totalPrice * 0.3);
-      setProfileData(prev => ({
-        ...prev,
-        salary: prev.salary + commission
-      }));
+      if (issuedBy === 'curator') {
+        const commission = Math.round(order.totalPrice * 0.25);
+        setProfileData(prev => ({
+          ...prev,
+          salary: prev.salary + commission
+        }));
+      } else {
+        const curatorCommission = Math.round(order.totalPrice * 0.05);
+        const internCommission = Math.round(order.totalPrice * 0.25);
+        
+        setProfileData(prev => ({
+          ...prev,
+          salary: prev.salary + curatorCommission
+        }));
+        
+        setInterns(prev => prev.map(intern => 
+          intern.id === issuedBy 
+            ? { ...intern, salary: intern.salary + internCommission }
+            : intern
+        ));
+      }
     }
     
     setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: 'issued' as const } : order
+      order.id === orderId ? { ...order, status: 'issued' as const, issuedBy } : order
     ));
     
     toast({
       title: 'Заказ выдан',
-      description: 'Статус успешно обновлен',
+      description: issuedBy === 'curator' ? 'Куратор выдал заказ (+25%)' : 'Стажёр выдал заказ (+25% стажёру, +5% куратору)',
+    });
+  };
+
+  const addIntern = () => {
+    if (!internName.trim() || !internSurname.trim()) {
+      toast({
+        title: 'Ошибка',
+        description: 'Укажите имя и фамилию стажёра',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const newIntern: Intern = {
+      id: Date.now().toString(),
+      name: internName.trim(),
+      surname: internSurname.trim(),
+      salary: 0,
+      createdAt: new Date().toISOString(),
+    };
+
+    setInterns([...interns, newIntern]);
+    setInternName('');
+    setInternSurname('');
+    setIsAddingIntern(false);
+    
+    toast({
+      title: 'Стажёр добавлен',
+      description: `${newIntern.name} ${newIntern.surname}`,
+    });
+  };
+
+  const removeIntern = (internId: string) => {
+    const intern = interns.find(i => i.id === internId);
+    if (intern) {
+      setInterns(interns.filter(i => i.id !== internId));
+      toast({
+        title: 'Стажёр уволен',
+        description: `${intern.name} ${intern.surname}`,
+      });
+    }
+  };
+
+  const withdrawInternSalary = (internId: string) => {
+    setInterns(prev => prev.map(intern => 
+      intern.id === internId ? { ...intern, salary: 0 } : intern
+    ));
+    toast({
+      title: 'Зарплата выведена',
+      description: 'Баланс стажёра обнулён',
     });
   };
 
@@ -290,6 +378,15 @@ const Index = () => {
               >
                 <Icon name="Settings" size={20} className="mr-2" />
                 Настройки
+              </Button>
+              
+              <Button 
+                onClick={() => setIsInternsOpen(true)}
+                variant="outline"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
+              >
+                <Icon name="Users" size={20} className="mr-2" />
+                Стажёры {interns.length > 0 && <Badge className="ml-1">{interns.length}</Badge>}
               </Button>
               
               <Button 
@@ -436,12 +533,66 @@ const Index = () => {
                               Состав
                             </Button>
                             <Button 
-                              onClick={() => issueOrder(order.id)}
+                              onClick={() => issueOrder(order.id, 'curator')}
                               className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Check" size={16} className="mr-2" />
                               Выдать
                             </Button>
+                            {interns.length > 0 && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline"
+                                    className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-500"
+                                  >
+                                    <Icon name="Users" size={16} className="mr-2" />
+                                    Стажёр
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Выдать заказ за стажёра</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-3">
+                                    {interns.map(intern => (
+                                      <div key={intern.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                        <div>
+                                          <p className="font-medium">{intern.name} {intern.surname}</p>
+                                          <p className="text-sm text-muted-foreground">Баланс: {intern.salary.toLocaleString('ru-RU')} ₽</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() => {
+                                              issueOrder(order.id, intern.id);
+                                              document.querySelector('[data-state="open"]')?.querySelector('button')?.click();
+                                            }}
+                                            className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
+                                          >
+                                            <Icon name="Check" size={14} className="mr-1" />
+                                            Выдать
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              setSelectedOrder(order);
+                                              setIsReturnDialogOpen(true);
+                                              document.querySelector('[data-state="open"]')?.querySelector('button')?.click();
+                                            }}
+                                            className="border-red-500 text-red-600 hover:bg-red-50"
+                                          >
+                                            <Icon name="Undo2" size={14} className="mr-1" />
+                                            Возврат
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
                             <Button 
                               onClick={() => {
                                 setSelectedOrder(order);
@@ -1064,6 +1215,126 @@ const Index = () => {
                 Готово
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isInternsOpen} onOpenChange={setIsInternsOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Users" size={20} />
+              Стажёры
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {!isAddingIntern ? (
+              <Button 
+                onClick={() => setIsAddingIntern(true)}
+                className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-105 transition-all duration-500"
+              >
+                <Icon name="UserPlus" size={16} className="mr-2" />
+                Добавить стажёра
+              </Button>
+            ) : (
+              <Card className="p-4 border-2 border-purple-200 bg-purple-50/50">
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="internName">Имя</Label>
+                    <Input
+                      id="internName"
+                      value={internName}
+                      onChange={(e) => setInternName(e.target.value)}
+                      placeholder="Введите имя"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="internSurname">Фамилия</Label>
+                    <Input
+                      id="internSurname"
+                      value={internSurname}
+                      onChange={(e) => setInternSurname(e.target.value)}
+                      placeholder="Введите фамилию"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={addIntern}
+                      className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
+                    >
+                      <Icon name="Check" size={16} className="mr-2" />
+                      Зарегистрировать
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setIsAddingIntern(false);
+                        setInternName('');
+                        setInternSurname('');
+                      }}
+                      variant="outline"
+                    >
+                      Отмена
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {interns.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Icon name="Users" size={48} className="mx-auto mb-4 opacity-20" />
+                <p>Нет зарегистрированных стажёров</p>
+                <p className="text-sm mt-2">Добавьте первого стажёра для начала работы</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {interns.map((intern) => (
+                  <Card key={intern.id} className="p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-600">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Icon name="User" className="text-white" size={20} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{intern.name} {intern.surname}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Стажёр • С {new Date(intern.createdAt).toLocaleDateString('ru-RU')}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Badge className="bg-green-100 text-green-700 border-green-300">
+                              <Icon name="Wallet" size={12} className="mr-1" />
+                              {intern.salary.toLocaleString('ru-RU')} ₽
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {intern.salary > 0 && (
+                          <Button
+                            size="sm"
+                            onClick={() => withdrawInternSalary(intern.id)}
+                            className="bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:scale-110 transition-all duration-500"
+                          >
+                            <Icon name="Banknote" size={14} className="mr-1" />
+                            Вывести
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeIntern(intern.id)}
+                          className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
+                        >
+                          <Icon name="UserMinus" size={14} className="mr-1" />
+                          Уволить
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
