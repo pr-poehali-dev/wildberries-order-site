@@ -40,20 +40,25 @@ const Index = () => {
     'Спортивные штаны', 'Леггинсы', 'Тренч', 'Духи', 'Косметичка', 'Чехол для телефона', 'Повербанк'
   ];
 
-  const firstNames = ['Александр', 'Дмитрий', 'Иван', 'Сергей', 'Андрей', 'Алексей', 'Михаил', 'Владимир',
-    'Анна', 'Мария', 'Елена', 'Ольга', 'Татьяна', 'Наталья', 'Екатерина', 'Ирина'];
+  const maleFirstNames = ['Александр', 'Дмитрий', 'Иван', 'Сергей', 'Андрей', 'Алексей', 'Михаил', 'Владимир'];
+  const femaleFirstNames = ['Анна', 'Мария', 'Елена', 'Ольга', 'Татьяна', 'Наталья', 'Екатерина', 'Ирина'];
   
-  const lastNames = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Васильев', 'Соколов',
-    'Иванова', 'Петрова', 'Сидорова', 'Смирнова', 'Кузнецова', 'Попова', 'Васильева', 'Соколова'];
+  const maleLastNames = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Васильев', 'Соколов'];
+  const femaleLastNames = ['Иванова', 'Петрова', 'Сидорова', 'Смирнова', 'Кузнецова', 'Попова', 'Васильева', 'Соколова'];
 
   const generateRandomName = (): string => {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const isMale = Math.random() > 0.5;
+    const firstName = isMale 
+      ? maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)]
+      : femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];
+    const lastName = isMale
+      ? maleLastNames[Math.floor(Math.random() * maleLastNames.length)]
+      : femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];
     return `${firstName} ${lastName}`;
   };
 
-  const generateRandomItems = (): OrderItem[] => {
-    const itemCount = Math.floor(Math.random() * 50) + 1;
+  const generateRandomItems = (count?: number): OrderItem[] => {
+    const itemCount = count || Math.floor(Math.random() * 50) + 1;
     const items: OrderItem[] = [];
     
     for (let i = 0; i < itemCount; i++) {
@@ -109,6 +114,8 @@ const Index = () => {
   const [returnReason, setReturnReason] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [orderItemCount, setOrderItemCount] = useState('5');
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('wildberries_profile');
     if (saved) {
@@ -137,7 +144,17 @@ const Index = () => {
   };
 
   const createOrder = () => {
-    const items = generateRandomItems();
+    const count = parseInt(orderItemCount);
+    if (isNaN(count) || count < 1 || count > 100) {
+      toast({
+        title: 'Ошибка',
+        description: 'Укажите количество товаров от 1 до 100',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const items = generateRandomItems(count);
     const itemCount = items.length;
     const newOrder: Order = {
       id: Date.now().toString(),
@@ -150,6 +167,8 @@ const Index = () => {
     };
 
     setOrders([newOrder, ...orders]);
+    setIsCreatingOrder(false);
+    setOrderItemCount('5');
     
     toast({
       title: `Заказ создан • ${itemCount} товар${itemCount === 1 ? '' : itemCount < 5 ? 'а' : 'ов'}`,
@@ -229,7 +248,7 @@ const Index = () => {
 
             <div className="flex items-center gap-3">
               <Button 
-                onClick={createOrder}
+                onClick={() => setIsCreatingOrder(true)}
                 className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
               >
                 <Icon name="Plus" size={20} className="mr-2" />
@@ -797,6 +816,52 @@ const Index = () => {
                 </div>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCreatingOrder} onOpenChange={setIsCreatingOrder}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Plus" size={20} />
+              Создать новый заказ
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="itemCount">Количество товаров в заказе</Label>
+              <Input
+                id="itemCount"
+                type="number"
+                min="1"
+                max="100"
+                value={orderItemCount}
+                onChange={(e) => setOrderItemCount(e.target.value)}
+                placeholder="Введите количество"
+              />
+              <p className="text-xs text-muted-foreground">
+                Товары и цены будут сгенерированы автоматически
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={createOrder}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary"
+              >
+                <Icon name="Check" size={16} className="mr-2" />
+                Создать
+              </Button>
+              <Button 
+                onClick={() => {
+                  setIsCreatingOrder(false);
+                  setOrderItemCount('5');
+                }}
+                variant="outline"
+              >
+                Отмена
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
