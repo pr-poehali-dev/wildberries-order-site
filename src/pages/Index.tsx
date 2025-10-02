@@ -7,6 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 
@@ -34,9 +37,47 @@ interface Intern {
   surname: string;
   salary: number;
   createdAt: string;
+  issuedOrders: number;
+  returnedOrders: number;
+  totalEarned: number;
+  warns: InternWarn[];
 }
 
+interface InternWarn {
+  id: string;
+  reason: string;
+  date: string;
+  issuedBy: string;
+}
+
+const ANIMATION_CLASSES = [
+  'animate-fade-in',
+  'animate-slide-in-bottom',
+  'animate-slide-in-top',
+  'animate-slide-in-left',
+  'animate-slide-in-right',
+  'animate-bounce-in',
+  'animate-zoom-in',
+  'animate-flip-in',
+  'animate-rotate-in',
+  'animate-shake',
+];
+
+const getRandomAnimation = () => {
+  return ANIMATION_CLASSES[Math.floor(Math.random() * ANIMATION_CLASSES.length)];
+};
+
 const Index = () => {
+  const [cardAnimation, setCardAnimation] = useState('');
+  const [buttonAnimation, setButtonAnimation] = useState('');
+  const [headerAnimation, setHeaderAnimation] = useState('');
+
+  useEffect(() => {
+    setCardAnimation(getRandomAnimation());
+    setButtonAnimation(getRandomAnimation());
+    setHeaderAnimation(getRandomAnimation());
+  }, []);
+
   const productNames = [
     'Футболка', 'Джинсы', 'Кроссовки', 'Платье', 'Куртка', 'Свитер', 'Рубашка', 'Юбка',
     'Шорты', 'Пальто', 'Кеды', 'Сумка', 'Рюкзак', 'Шапка', 'Шарф', 'Перчатки',
@@ -94,26 +135,20 @@ const Index = () => {
     if (saved) {
       return JSON.parse(saved);
     }
-    return [
-      {
-        id: '1',
-        customerName: 'Иван Петров',
-        barcode: '8B0301927',
-        status: 'waiting' as const,
-        createdAt: new Date().toISOString(),
-        items: generateRandomItems(),
-        totalPrice: 0,
-      },
-      {
-        id: '2',
-        customerName: 'Мария Сидорова',
-        barcode: '8B0301928',
-        status: 'waiting' as const,
-        createdAt: new Date().toISOString(),
-        items: generateRandomItems(),
-        totalPrice: 0,
-      },
-    ].map(order => ({ ...order, totalPrice: calculateTotal(order.items) }));
+    return [];
+  });
+
+  const [interns, setInterns] = useState<Intern[]>(() => {
+    const saved = localStorage.getItem('wildberries_interns');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [];
+  });
+
+  const [curatorBalance, setCuratorBalance] = useState<number>(() => {
+    const saved = localStorage.getItem('wildberries_curator_balance');
+    return saved ? parseFloat(saved) : 0;
   });
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,56 +156,24 @@ const Index = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [orderItemCount, setOrderItemCount] = useState('5');
-  const [appTheme, setAppTheme] = useState(() => {
-    const saved = localStorage.getItem('wildberries_theme');
-    return saved ? JSON.parse(saved) : {
-      primaryColor: '#8b5cf6',
-      accentColor: '#a855f7'
-    };
-  });
-
-  const [interns, setInterns] = useState<Intern[]>(() => {
-    const saved = localStorage.getItem('wildberries_interns');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [profileData, setProfileData] = useState(() => {
-    const saved = localStorage.getItem('wildberries_profile');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...parsed,
-        salary: parsed.salary ?? 0,
-      };
-    }
-    return {
-      name: 'Александр Иванов',
-      position: 'Оператор ПВЗ',
-      pvzNumber: 'ПВЗ #8279',
-      address: 'Москва, ул. Ленина, 15',
-      salary: 0,
-    };
-  });
-  const [tempProfileData, setTempProfileData] = useState(profileData);
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isInternsOpen, setIsInternsOpen] = useState(false);
   const [isAddingIntern, setIsAddingIntern] = useState(false);
   const [internName, setInternName] = useState('');
   const [internSurname, setInternSurname] = useState('');
+  const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
+  const [isInternProfileOpen, setIsInternProfileOpen] = useState(false);
+  const [isWarnDialogOpen, setIsWarnDialogOpen] = useState(false);
+  const [warnReason, setWarnReason] = useState('');
+  const [bulkOrderCount, setBulkOrderCount] = useState(1);
+  const [isBulkOrderOpen, setIsBulkOrderOpen] = useState(false);
+
+  const [appTheme, setAppTheme] = useState({
+    primaryColor: '#8b5cf6',
+    accentColor: '#a855f7'
+  });
+
   const { toast } = useToast();
-
-  useEffect(() => {
-    localStorage.setItem('wildberries_theme', JSON.stringify(appTheme));
-  }, [appTheme]);
-
-  useEffect(() => {
-    localStorage.setItem('wildberries_profile', JSON.stringify(profileData));
-  }, [profileData]);
 
   useEffect(() => {
     localStorage.setItem('wildberries_orders', JSON.stringify(orders));
@@ -180,84 +183,150 @@ const Index = () => {
     localStorage.setItem('wildberries_interns', JSON.stringify(interns));
   }, [interns]);
 
-  const generateBarcode = () => {
-    return '8B' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
-  };
+  useEffect(() => {
+    localStorage.setItem('wildberries_curator_balance', curatorBalance.toString());
+  }, [curatorBalance]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--primary-color', appTheme.primaryColor);
+    document.documentElement.style.setProperty('--accent-color', appTheme.accentColor);
+  }, [appTheme]);
 
   const createOrder = () => {
-    const count = parseInt(orderItemCount);
-    if (isNaN(count) || count < 1 || count > 100) {
+    const newOrder: Order = {
+      id: Date.now().toString(),
+      customerName: generateRandomName(),
+      barcode: `WB${Math.floor(Math.random() * 900000000) + 100000000}`,
+      status: 'waiting',
+      createdAt: new Date().toISOString(),
+      items: generateRandomItems(),
+      totalPrice: 0
+    };
+    newOrder.totalPrice = calculateTotal(newOrder.items);
+    
+    setOrders([newOrder, ...orders]);
+    toast({
+      title: 'Заказ создан',
+      description: `Штрих-код: ${newOrder.barcode}`,
+    });
+  };
+
+  const createBulkOrders = () => {
+    const newOrders: Order[] = [];
+    for (let i = 0; i < bulkOrderCount; i++) {
+      const order: Order = {
+        id: (Date.now() + i).toString(),
+        customerName: generateRandomName(),
+        barcode: `WB${Math.floor(Math.random() * 900000000) + 100000000}`,
+        status: 'waiting',
+        createdAt: new Date().toISOString(),
+        items: generateRandomItems(),
+        totalPrice: 0
+      };
+      order.totalPrice = calculateTotal(order.items);
+      newOrders.push(order);
+    }
+    
+    setOrders([...newOrders, ...orders]);
+    setIsBulkOrderOpen(false);
+    toast({
+      title: `Создано заказов: ${bulkOrderCount}`,
+      description: `Все заказы добавлены в систему`,
+    });
+  };
+
+  const issueOrder = (orderId: string, issuedBy: 'curator' | string) => {
+    setOrders(orders.map(order => {
+      if (order.id === orderId && order.status === 'waiting') {
+        const commission = order.totalPrice * 0.25;
+        
+        if (issuedBy === 'curator') {
+          setCuratorBalance(prev => prev + commission);
+        } else {
+          const curatorCommission = order.totalPrice * 0.05;
+          const internCommission = order.totalPrice * 0.25;
+          
+          setCuratorBalance(prev => prev + curatorCommission);
+          setInterns(interns.map(intern => 
+            intern.id === issuedBy 
+              ? { 
+                  ...intern, 
+                  salary: intern.salary + internCommission,
+                  issuedOrders: intern.issuedOrders + 1,
+                  totalEarned: intern.totalEarned + internCommission
+                }
+              : intern
+          ));
+        }
+
+        toast({
+          title: 'Заказ выдан',
+          description: `Начислено: ${commission.toFixed(0)} ₽`,
+        });
+        
+        return { ...order, status: 'issued' as const, issuedBy };
+      }
+      return order;
+    }));
+  };
+
+  const returnOrder = () => {
+    if (!selectedOrder || !returnReason.trim()) {
       toast({
         title: 'Ошибка',
-        description: 'Укажите количество товаров от 1 до 100',
+        description: 'Укажите причину возврата',
         variant: 'destructive',
       });
       return;
     }
 
-    const items = generateRandomItems(count);
-    const itemCount = items.length;
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      customerName: generateRandomName(),
-      barcode: generateBarcode(),
-      status: 'waiting',
-      createdAt: new Date().toISOString(),
-      items,
-      totalPrice: calculateTotal(items),
-    };
-
-    setOrders([newOrder, ...orders]);
-    setIsCreatingOrder(false);
-    setOrderItemCount('5');
-    
-    toast({
-      title: `Заказ создан • ${itemCount} товар${itemCount === 1 ? '' : itemCount < 5 ? 'а' : 'ов'}`,
-      description: `${newOrder.customerName} • ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
-    });
-  };
-
-  const issueOrder = (orderId: string, issuedBy: 'curator' | string = 'curator') => {
-    const order = orders.find(o => o.id === orderId);
-    if (order) {
-      if (issuedBy === 'curator') {
-        const commission = Math.round(order.totalPrice * 0.25);
-        setProfileData(prev => ({
-          ...prev,
-          salary: prev.salary + commission
-        }));
-      } else {
-        const curatorCommission = Math.round(order.totalPrice * 0.05);
-        const internCommission = Math.round(order.totalPrice * 0.25);
+    setOrders(orders.map(order => {
+      if (order.id === selectedOrder.id) {
+        const commission = order.totalPrice * 0.25;
         
-        setProfileData(prev => ({
-          ...prev,
-          salary: prev.salary + curatorCommission
-        }));
-        
-        setInterns(prev => prev.map(intern => 
-          intern.id === issuedBy 
-            ? { ...intern, salary: intern.salary + internCommission }
-            : intern
-        ));
+        if (order.issuedBy === 'curator') {
+          setCuratorBalance(prev => Math.max(0, prev - commission));
+        } else if (order.issuedBy) {
+          const curatorCommission = order.totalPrice * 0.05;
+          const internCommission = order.totalPrice * 0.25;
+          
+          setCuratorBalance(prev => Math.max(0, prev - curatorCommission));
+          setInterns(interns.map(intern => 
+            intern.id === order.issuedBy 
+              ? { 
+                  ...intern, 
+                  salary: Math.max(0, intern.salary - internCommission),
+                  returnedOrders: intern.returnedOrders + 1
+                }
+              : intern
+          ));
+        }
+
+        toast({
+          title: 'Возврат оформлен',
+          description: returnReason,
+          variant: 'destructive',
+        });
+
+        return {
+          ...order,
+          status: 'returned' as const,
+          returnReason
+        };
       }
-    }
-    
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: 'issued' as const, issuedBy } : order
-    ));
-    
-    toast({
-      title: 'Заказ выдан',
-      description: issuedBy === 'curator' ? 'Куратор выдал заказ (+25%)' : 'Стажёр выдал заказ (+25% стажёру, +5% куратору)',
-    });
+      return order;
+    }));
+
+    setIsReturnDialogOpen(false);
+    setReturnReason('');
+    setSelectedOrder(null);
   };
 
   const addIntern = () => {
     if (!internName.trim() || !internSurname.trim()) {
       toast({
         title: 'Ошибка',
-        description: 'Укажите имя и фамилию стажёра',
+        description: 'Заполните все поля',
         variant: 'destructive',
       });
       return;
@@ -265,10 +334,14 @@ const Index = () => {
 
     const newIntern: Intern = {
       id: Date.now().toString(),
-      name: internName.trim(),
-      surname: internSurname.trim(),
+      name: internName,
+      surname: internSurname,
       salary: 0,
       createdAt: new Date().toISOString(),
+      issuedOrders: 0,
+      returnedOrders: 0,
+      totalEarned: 0,
+      warns: []
     };
 
     setInterns([...interns, newIntern]);
@@ -277,247 +350,314 @@ const Index = () => {
     setIsAddingIntern(false);
     
     toast({
-      title: 'Стажёр добавлен',
+      title: 'Стажёр зарегистрирован',
       description: `${newIntern.name} ${newIntern.surname}`,
     });
   };
 
   const removeIntern = (internId: string) => {
-    const intern = interns.find(i => i.id === internId);
-    if (intern) {
-      setInterns(interns.filter(i => i.id !== internId));
+    setInterns(interns.filter(intern => intern.id !== internId));
+    toast({
+      title: 'Стажёр уволен',
+      description: 'Данные удалены из системы',
+    });
+  };
+
+  const withdrawInternSalary = (internId: string) => {
+    setInterns(interns.map(intern => {
+      if (intern.id === internId && intern.salary > 0) {
+        const amount = intern.salary;
+        toast({
+          title: 'Выплата произведена',
+          description: `Выплачено: ${amount.toLocaleString('ru-RU')} ₽`,
+        });
+        return { ...intern, salary: 0 };
+      }
+      return intern;
+    }));
+  };
+
+  const withdrawCuratorBalance = () => {
+    if (curatorBalance > 0) {
+      const amount = curatorBalance;
+      setCuratorBalance(0);
       toast({
-        title: 'Стажёр уволен',
-        description: `${intern.name} ${intern.surname}`,
+        title: 'Выплата произведена',
+        description: `Выплачено: ${amount.toLocaleString('ru-RU')} ₽`,
       });
     }
   };
 
-  const withdrawInternSalary = (internId: string) => {
-    setInterns(prev => prev.map(intern => 
-      intern.id === internId ? { ...intern, salary: 0 } : intern
-    ));
-    toast({
-      title: 'Зарплата выведена',
-      description: 'Баланс стажёра обнулён',
-    });
-  };
-
-  const returnOrder = () => {
-    if (!selectedOrder || !returnReason) {
+  const addWarnToIntern = () => {
+    if (!selectedIntern || !warnReason.trim()) {
       toast({
         title: 'Ошибка',
-        description: 'Выберите причину возврата',
+        description: 'Укажите причину предупреждения',
         variant: 'destructive',
       });
       return;
     }
 
-    setOrders(orders.map(order => 
-      order.id === selectedOrder.id 
-        ? { ...order, status: 'returned' as const, returnReason } 
-        : order
+    const newWarn: InternWarn = {
+      id: Date.now().toString(),
+      reason: warnReason,
+      date: new Date().toISOString(),
+      issuedBy: 'Куратор'
+    };
+
+    setInterns(interns.map(intern => 
+      intern.id === selectedIntern.id 
+        ? { ...intern, warns: [...intern.warns, newWarn] }
+        : intern
     ));
-    
-    setIsReturnDialogOpen(false);
-    setIsDetailsOpen(false);
-    setReturnReason('');
+
+    setWarnReason('');
+    setIsWarnDialogOpen(false);
     
     toast({
-      title: 'Возврат оформлен',
-      description: `Причина: ${returnReason}`,
+      title: 'Предупреждение выдано',
+      description: `${selectedIntern.name} ${selectedIntern.surname}`,
+      variant: 'destructive',
     });
   };
 
-  const filteredOrders = orders.filter(order => 
-    order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    order.barcode.includes(searchQuery)
+  const removeWarn = (internId: string, warnId: string) => {
+    setInterns(interns.map(intern => 
+      intern.id === internId 
+        ? { ...intern, warns: intern.warns.filter(w => w.id !== warnId) }
+        : intern
+    ));
+    
+    toast({
+      title: 'Предупреждение снято',
+    });
+  };
+
+  const filteredOrders = orders.filter(order =>
+    order.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    order.customerName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const waitingOrders = filteredOrders.filter(o => o.status === 'waiting');
-  const issuedOrders = filteredOrders.filter(o => o.status === 'issued');
-  const returnedOrders = filteredOrders.filter(o => o.status === 'returned');
+  const waitingOrders = filteredOrders.filter(order => order.status === 'waiting');
+  const issuedOrders = filteredOrders.filter(order => order.status === 'issued');
+  const returnedOrders = filteredOrders.filter(order => order.status === 'returned');
 
-  const stats = {
-    total: orders.length,
-    waiting: orders.filter(o => o.status === 'waiting').length,
-    issued: orders.filter(o => o.status === 'issued').length,
-    returned: orders.filter(o => o.status === 'returned').length,
+  const totalRevenue = orders
+    .filter(order => order.status === 'issued')
+    .reduce((sum, order) => sum + order.totalPrice, 0);
+
+  const getEfficiencyLevel = (intern: Intern) => {
+    if (intern.issuedOrders === 0) return { level: 'Новичок', color: 'gray', progress: 0 };
+    
+    const efficiency = intern.returnedOrders === 0 
+      ? 100 
+      : ((intern.issuedOrders - intern.returnedOrders) / intern.issuedOrders) * 100;
+    
+    if (efficiency >= 95) return { level: 'Эксперт', color: 'purple', progress: 100 };
+    if (efficiency >= 85) return { level: 'Профи', color: 'blue', progress: 85 };
+    if (efficiency >= 70) return { level: 'Хорошо', color: 'green', progress: 70 };
+    if (efficiency >= 50) return { level: 'Средне', color: 'yellow', progress: 50 };
+    return { level: 'Нужно подтянуть', color: 'red', progress: 30 };
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      <div className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Icon name="Package" className="text-white" size={24} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
-                  Wildberries ПВЗ
-                </h1>
-                <p className="text-sm text-muted-foreground">Система управления выдачей</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button 
-                onClick={() => setIsCreatingOrder(true)}
-                className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white hover:scale-110 transition-all duration-500 shadow-lg hover:shadow-2xl"
-              >
-                <Icon name="Plus" size={20} className="mr-2" />
-                Создать заказ
-              </Button>
-              
-              <Button 
-                onClick={() => setIsSettingsOpen(true)}
-                variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
-              >
-                <Icon name="Settings" size={20} className="mr-2" />
-                Настройки
-              </Button>
-              
-              <Button 
-                onClick={() => setIsInternsOpen(true)}
-                variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
-              >
-                <Icon name="Users" size={20} className="mr-2" />
-                Стажёры {interns.length > 0 && <Badge className="ml-1">{interns.length}</Badge>}
-              </Button>
-              
-              <Button 
-                onClick={() => setIsProfileOpen(true)}
-                variant="outline"
-                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
-              >
-                <Icon name="User" size={20} className="mr-2" />
-                Профиль
-              </Button>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-4">
+      <div className={`max-w-7xl mx-auto space-y-6 ${headerAnimation}`}>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white rounded-2xl p-6 shadow-lg border-2 border-purple-100">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent flex items-center gap-3">
+              <Icon name="Package" size={40} className="text-purple-600" />
+              ПВЗ Wildberries
+            </h1>
+            <p className="text-gray-600 mt-2">Система управления пунктом выдачи заказов</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={isBulkOrderOpen} onOpenChange={setIsBulkOrderOpen}>
+              <DialogTrigger asChild>
+                <Button className={`bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500 ${buttonAnimation}`}>
+                  <Icon name="PackagePlus" size={18} className="mr-2" />
+                  Создать заказы
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Массовое создание заказов</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="space-y-3">
+                    <Label>Количество заказов: {bulkOrderCount}</Label>
+                    <Slider
+                      value={[bulkOrderCount]}
+                      onValueChange={(value) => setBulkOrderCount(value[0])}
+                      min={1}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>1 заказ</span>
+                      <span>100 заказов</span>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={createBulkOrders}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600"
+                  >
+                    <Icon name="Zap" size={18} className="mr-2" />
+                    Создать {bulkOrderCount} {bulkOrderCount === 1 ? 'заказ' : bulkOrderCount < 5 ? 'заказа' : 'заказов'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            
+            <Button 
+              onClick={() => setIsInternsOpen(true)}
+              variant="outline"
+              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500 relative"
+            >
+              <Icon name="Users" size={18} className="mr-2" />
+              Стажёры
+              {interns.length > 0 && (
+                <Badge className="ml-2 bg-purple-600 text-white">{interns.length}</Badge>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={() => setIsSettingsOpen(true)}
+              variant="outline"
+              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
+            >
+              <Icon name="Settings" size={18} className="mr-2" />
+              Настройки
+            </Button>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-l-4 border-l-purple-600 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
+        <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${cardAnimation}`}>
+          <Card className="border-2 border-purple-100 hover:shadow-xl transition-all duration-500 hover:scale-105 bg-gradient-to-br from-purple-50 to-white">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Всего заказов</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Icon name="Clock" size={16} />
+                Ожидают выдачи
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{stats.total}</div>
+              <div className="text-3xl font-bold text-purple-600">{waitingOrders.length}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
+          <Card className="border-2 border-green-100 hover:shadow-xl transition-all duration-500 hover:scale-105 bg-gradient-to-br from-green-50 to-white">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Ожидают выдачи</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Icon name="CheckCircle" size={16} />
+                Выдано
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-orange-500">{stats.waiting}</div>
+              <div className="text-3xl font-bold text-green-600">{issuedOrders.length}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
+          <Card className="border-2 border-red-100 hover:shadow-xl transition-all duration-500 hover:scale-105 bg-gradient-to-br from-red-50 to-white">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Выдано сегодня</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Icon name="XCircle" size={16} />
+                Возвраты
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-500">{stats.issued}</div>
+              <div className="text-3xl font-bold text-red-600">{returnedOrders.length}</div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
+          <Card className="border-2 border-purple-200 hover:shadow-xl transition-all duration-500 hover:scale-105 bg-gradient-to-br from-purple-100 to-white cursor-pointer" onClick={withdrawCuratorBalance}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Возвраты</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Icon name="Wallet" size={16} />
+                Баланс куратора
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-500">{stats.returned}</div>
+              <div className="text-3xl font-bold text-purple-600">{curatorBalance.toLocaleString('ru-RU')} ₽</div>
+              {curatorBalance > 0 && (
+                <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
+                  <Icon name="MousePointerClick" size={12} />
+                  Нажмите для вывода
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-500">
+        <Card className={`border-2 border-purple-100 shadow-lg ${cardAnimation}`}>
           <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <CardTitle className="text-xl">Управление заказами</CardTitle>
-              <div className="relative flex-1 md:max-w-md">
-                <Icon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-                <Input
-                  placeholder="Поиск по имени или штрих-коду..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="Search" size={20} />
+                Поиск заказов
+              </CardTitle>
+              <Input
+                placeholder="Поиск по штрих-коду или имени..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="md:w-96 border-purple-200 focus:border-purple-400 transition-all"
+              />
             </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="waiting" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger 
-                  value="waiting" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
-                >
+              <TabsList className="grid w-full grid-cols-3 mb-6 bg-purple-100">
+                <TabsTrigger value="waiting" className="data-[state=active]:bg-purple-600 data-[state=active]:text-white">
                   <Icon name="Clock" size={16} className="mr-2" />
                   Ожидают ({waitingOrders.length})
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="issued" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
-                >
+                <TabsTrigger value="issued" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
                   <Icon name="CheckCircle" size={16} className="mr-2" />
-                  Выданные ({issuedOrders.length})
+                  Выдано ({issuedOrders.length})
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="returned" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
-                >
-                  <Icon name="Undo2" size={16} className="mr-2" />
+                <TabsTrigger value="returned" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+                  <Icon name="XCircle" size={16} className="mr-2" />
                   Возвраты ({returnedOrders.length})
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="waiting" className="space-y-4">
+              <TabsContent value="waiting" className="space-y-3">
                 {waitingOrders.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Icon name="Package" size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Нет заказов, ожидающих выдачи</p>
+                  <div className="text-center py-12 text-gray-400">
+                    <Icon name="PackageX" size={64} className="mx-auto mb-4 opacity-20" />
+                    <p className="text-lg">Нет заказов в ожидании</p>
                   </div>
                 ) : (
-                  waitingOrders.map((order, index) => (
-                    <Card 
-                      key={order.id} 
-                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-orange-500 animate-fade-in"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
+                  waitingOrders.map((order) => (
+                    <Card key={order.id} className="border-l-4 border-l-purple-600 hover:shadow-lg transition-all duration-300 animate-slide-in-left">
                       <CardContent className="pt-6">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                          <div className="flex items-start gap-4 flex-1">
-                            <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Icon name="User" className="text-orange-600" size={24} />
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                  <Icon name="User" size={18} />
+                                  {order.customerName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Icon name="Barcode" size={14} />
+                                  {order.barcode}
+                                </p>
+                              </div>
+                              <Badge className="bg-purple-100 text-purple-700 border-purple-300">
+                                <Icon name="Clock" size={12} className="mr-1" />
+                                Ожидает
+                              </Badge>
                             </div>
-                            <div className="flex-1">
-                              <h3 className="font-semibold text-lg mb-1">{order.customerName}</h3>
-                              <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Icon name="Barcode" size={16} />
-                                  <span className="font-mono">{order.barcode}</span>
-                                </div>
-                                <Badge variant="outline" className="border-orange-500 text-orange-600">
-                                  <Icon name="Clock" size={12} className="mr-1" />
-                                  Ожидает
-                                </Badge>
-                              </div>
-                              <div className="mt-2 text-sm">
-                                <span className="font-medium">{order.items.length} товаров</span>
-                                <span className="mx-2">•</span>
-                                <span className="font-bold text-primary">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
-                              </div>
+                            <div className="flex flex-wrap gap-2 mt-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Icon name="Package" size={14} />
+                                {order.items.length} {order.items.length === 1 ? 'товар' : order.items.length < 5 ? 'товара' : 'товаров'}
+                              </span>
+                              <span className="flex items-center gap-1 font-semibold text-purple-600">
+                                <Icon name="Coins" size={14} />
+                                {order.totalPrice.toLocaleString('ru-RU')} ₽
+                              </span>
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -566,25 +706,13 @@ const Index = () => {
                                             size="sm"
                                             onClick={() => {
                                               issueOrder(order.id, intern.id);
-                                              document.querySelector('[data-state="open"]')?.querySelector('button')?.click();
+                                              const closeBtn = document.querySelector('[data-state="open"]')?.querySelector('button');
+                                              if (closeBtn instanceof HTMLElement) closeBtn.click();
                                             }}
                                             className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
                                           >
                                             <Icon name="Check" size={14} className="mr-1" />
                                             Выдать
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => {
-                                              setSelectedOrder(order);
-                                              setIsReturnDialogOpen(true);
-                                              document.querySelector('[data-state="open"]')?.querySelector('button')?.click();
-                                            }}
-                                            className="border-red-500 text-red-600 hover:bg-red-50"
-                                          >
-                                            <Icon name="Undo2" size={14} className="mr-1" />
-                                            Возврат
                                           </Button>
                                         </div>
                                       </div>
@@ -593,17 +721,6 @@ const Index = () => {
                                 </DialogContent>
                               </Dialog>
                             )}
-                            <Button 
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setIsReturnDialogOpen(true);
-                              }}
-                              variant="outline"
-                              className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
-                            >
-                              <Icon name="Undo2" size={16} className="mr-2" />
-                              Возврат
-                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -612,51 +729,53 @@ const Index = () => {
                 )}
               </TabsContent>
 
-              <TabsContent value="issued" className="space-y-4">
+              <TabsContent value="issued" className="space-y-3">
                 {issuedOrders.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Icon name="CheckCircle" size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Нет выданных заказов</p>
+                  <div className="text-center py-12 text-gray-400">
+                    <Icon name="PackageCheck" size={64} className="mx-auto mb-4 opacity-20" />
+                    <p className="text-lg">Нет выданных заказов</p>
                   </div>
                 ) : (
-                  issuedOrders.map((order, index) => (
-                    <Card 
-                      key={order.id} 
-                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-green-500 opacity-75 animate-fade-in"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
+                  issuedOrders.map((order) => (
+                    <Card key={order.id} className="border-l-4 border-l-green-600 hover:shadow-lg transition-all duration-300 animate-slide-in-right">
                       <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Icon name="User" className="text-green-600" size={24} />
-                          </div>
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{order.customerName}</h3>
-                            <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Icon name="Barcode" size={16} />
-                                <span className="font-mono">{order.barcode}</span>
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                  <Icon name="User" size={18} />
+                                  {order.customerName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Icon name="Barcode" size={14} />
+                                  {order.barcode}
+                                </p>
                               </div>
-                              <Badge variant="outline" className="border-green-500 text-green-600">
+                              <Badge className="bg-green-100 text-green-700 border-green-300">
                                 <Icon name="CheckCircle" size={12} className="mr-1" />
                                 Выдан
                               </Badge>
                             </div>
-                            <div className="mt-2 text-sm">
-                              <span className="font-medium">{order.items.length} товаров</span>
-                              <span className="mx-2">•</span>
-                              <span className="font-bold text-green-600">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
+                            <div className="flex flex-wrap gap-2 mt-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Icon name="Package" size={14} />
+                                {order.items.length} {order.items.length === 1 ? 'товар' : order.items.length < 5 ? 'товара' : 'товаров'}
+                              </span>
+                              <span className="flex items-center gap-1 font-semibold text-green-600">
+                                <Icon name="Coins" size={14} />
+                                {order.totalPrice.toLocaleString('ru-RU')} ₽
+                              </span>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button 
                               onClick={() => {
                                 setSelectedOrder(order);
                                 setIsDetailsOpen(true);
                               }}
                               variant="outline"
-                              size="sm"
-                              className="border-green-500 text-green-600 hover:bg-green-50 hover:scale-110 transition-all duration-500"
+                              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Eye" size={16} className="mr-2" />
                               Состав
@@ -667,7 +786,6 @@ const Index = () => {
                                 setIsReturnDialogOpen(true);
                               }}
                               variant="outline"
-                              size="sm"
                               className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Undo2" size={16} className="mr-2" />
@@ -681,60 +799,64 @@ const Index = () => {
                 )}
               </TabsContent>
 
-              <TabsContent value="returned" className="space-y-4">
+              <TabsContent value="returned" className="space-y-3">
                 {returnedOrders.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Icon name="Undo2" size={48} className="mx-auto mb-4 opacity-20" />
-                    <p>Нет возвращенных заказов</p>
+                  <div className="text-center py-12 text-gray-400">
+                    <Icon name="PackageX" size={64} className="mx-auto mb-4 opacity-20" />
+                    <p className="text-lg">Нет возвращённых заказов</p>
                   </div>
                 ) : (
-                  returnedOrders.map((order, index) => (
-                    <Card 
-                      key={order.id} 
-                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-red-500 animate-fade-in"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
+                  returnedOrders.map((order) => (
+                    <Card key={order.id} className="border-l-4 border-l-red-600 hover:shadow-lg transition-all duration-300 animate-bounce-in">
                       <CardContent className="pt-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Icon name="User" className="text-red-600" size={24} />
-                          </div>
+                        <div className="flex flex-col md:flex-row justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{order.customerName}</h3>
-                            <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Icon name="Barcode" size={16} />
-                                <span className="font-mono">{order.barcode}</span>
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                  <Icon name="User" size={18} />
+                                  {order.customerName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Icon name="Barcode" size={14} />
+                                  {order.barcode}
+                                </p>
                               </div>
-                              <Badge variant="outline" className="border-red-500 text-red-600">
-                                <Icon name="Undo2" size={12} className="mr-1" />
+                              <Badge className="bg-red-100 text-red-700 border-red-300">
+                                <Icon name="XCircle" size={12} className="mr-1" />
                                 Возврат
                               </Badge>
                             </div>
-                            <div className="mt-2 text-sm">
-                              <span className="font-medium">{order.items.length} товаров</span>
-                              <span className="mx-2">•</span>
-                              <span className="font-bold text-red-600">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
-                            </div>
                             {order.returnReason && (
-                              <div className="mt-2 text-sm bg-red-50 px-3 py-2 rounded-lg">
-                                <span className="font-medium text-red-800">Причина: </span>
-                                <span className="text-red-700">{order.returnReason}</span>
+                              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                                <Icon name="AlertCircle" size={14} className="inline mr-1" />
+                                {order.returnReason}
                               </div>
                             )}
+                            <div className="flex flex-wrap gap-2 mt-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Icon name="Package" size={14} />
+                                {order.items.length} {order.items.length === 1 ? 'товар' : order.items.length < 5 ? 'товара' : 'товаров'}
+                              </span>
+                              <span className="flex items-center gap-1 font-semibold text-red-600">
+                                <Icon name="Coins" size={14} />
+                                {order.totalPrice.toLocaleString('ru-RU')} ₽
+                              </span>
+                            </div>
                           </div>
-                          <Button 
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setIsDetailsOpen(true);
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
-                          >
-                            <Icon name="Eye" size={16} className="mr-2" />
-                            Состав
-                          </Button>
+                          <div className="flex flex-wrap gap-2">
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsDetailsOpen(true);
+                              }}
+                              variant="outline"
+                              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
+                            >
+                              <Icon name="Eye" size={16} className="mr-2" />
+                              Состав
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -749,61 +871,46 @@ const Index = () => {
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl">Состав заказа</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Package" size={20} />
+              Состав заказа
+            </DialogTitle>
           </DialogHeader>
           {selectedOrder && (
             <div className="space-y-4">
-              <div className="border-b pb-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-500 rounded-lg flex items-center justify-center">
-                    <Icon name="User" className="text-white" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{selectedOrder.customerName}</h3>
-                    <p className="text-sm text-muted-foreground font-mono">{selectedOrder.barcode}</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-muted-foreground">Покупатель</p>
+                  <p className="font-semibold">{selectedOrder.customerName}</p>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={selectedOrder.status === 'waiting' 
-                    ? 'border-orange-500 text-orange-600' 
-                    : 'border-green-500 text-green-600'}
-                >
-                  {selectedOrder.status === 'waiting' ? 'Ожидает выдачи' : 'Выдан'}
-                </Badge>
+                <div>
+                  <p className="text-sm text-muted-foreground">Штрих-код</p>
+                  <p className="font-semibold">{selectedOrder.barcode}</p>
+                </div>
               </div>
-
-              <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
+              
+              <div className="space-y-2">
+                <h3 className="font-semibold flex items-center gap-2">
                   <Icon name="ShoppingBag" size={18} />
                   Товары ({selectedOrder.items.length})
-                </h4>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                </h3>
+                <div className="max-h-96 overflow-y-auto space-y-2">
                   {selectedOrder.items.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
-                    >
+                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <div className="flex-1">
                         <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {item.quantity} шт × {item.price.toLocaleString('ru-RU')} ₽
-                        </p>
+                        <p className="text-sm text-muted-foreground">Количество: {item.quantity} шт.</p>
                       </div>
-                      <div className="font-semibold text-primary">
-                        {(item.quantity * item.price).toLocaleString('ru-RU')} ₽
-                      </div>
+                      <p className="font-semibold text-purple-600">{(item.price * item.quantity).toLocaleString('ru-RU')} ₽</p>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-lg">
-                  <span className="font-semibold">Итого:</span>
-                  <span className="font-bold text-2xl text-primary">
-                    {selectedOrder.totalPrice.toLocaleString('ru-RU')} ₽
-                  </span>
+              <div className="pt-4 border-t">
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Итого:</span>
+                  <span className="text-purple-600">{selectedOrder.totalPrice.toLocaleString('ru-RU')} ₽</span>
                 </div>
               </div>
             </div>
@@ -814,287 +921,45 @@ const Index = () => {
       <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl">Оформление возврата</DialogTitle>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-semibold">{selectedOrder.customerName}</p>
-                <p className="text-sm text-muted-foreground font-mono">{selectedOrder.barcode}</p>
-              </div>
-              
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">Причина возврата</Label>
-                <RadioGroup value={returnReason} onValueChange={setReturnReason}>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <RadioGroupItem value="Не подошло" id="reason1" />
-                    <Label htmlFor="reason1" className="cursor-pointer flex-1">Не подошло</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <RadioGroupItem value="Брак" id="reason2" />
-                    <Label htmlFor="reason2" className="cursor-pointer flex-1">Брак</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <RadioGroupItem value="Передумал брать" id="reason3" />
-                    <Label htmlFor="reason3" className="cursor-pointer flex-1">Передумал брать</Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-                    <RadioGroupItem value="Не понравилось" id="reason4" />
-                    <Label htmlFor="reason4" className="cursor-pointer flex-1">Не понравилось</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              <Button 
-                onClick={returnOrder}
-                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 hover:scale-110 transition-all duration-500"
-                disabled={!returnReason}
-              >
-                <Icon name="Undo2" size={16} className="mr-2" />
-                Оформить возврат
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isProfileOpen} onOpenChange={(open) => {
-        setIsProfileOpen(open);
-        if (!open) setIsEditingProfile(false);
-      }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center justify-between">
-              Профиль сотрудника
-              {!isEditingProfile && (
-                <Button 
-                  onClick={() => {
-                    setIsEditingProfile(true);
-                    setTempProfileData(profileData);
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
-                >
-                  <Icon name="Pencil" size={16} className="mr-2" />
-                  Редактировать
-                </Button>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            {isEditingProfile ? (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Имя и фамилия</Label>
-                  <Input
-                    id="name"
-                    value={tempProfileData.name}
-                    onChange={(e) => setTempProfileData({ ...tempProfileData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="position">Должность</Label>
-                  <Input
-                    id="position"
-                    value={tempProfileData.position}
-                    onChange={(e) => setTempProfileData({ ...tempProfileData, position: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pvzNumber">Номер ПВЗ</Label>
-                  <Input
-                    id="pvzNumber"
-                    value={tempProfileData.pvzNumber}
-                    onChange={(e) => setTempProfileData({ ...tempProfileData, pvzNumber: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Адрес</Label>
-                  <Input
-                    id="address"
-                    value={tempProfileData.address}
-                    onChange={(e) => setTempProfileData({ ...tempProfileData, address: e.target.value })}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => {
-                      setProfileData(tempProfileData);
-                      setIsEditingProfile(false);
-                      toast({
-                        title: 'Профиль обновлен',
-                        description: 'Данные успешно сохранены',
-                      });
-                    }}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-110 transition-all duration-500"
-                  >
-                    <Icon name="Save" size={16} className="mr-2" />
-                    Сохранить
-                  </Button>
-                  <Button 
-                    onClick={() => {
-                      setIsEditingProfile(false);
-                      setTempProfileData(profileData);
-                    }}
-                    variant="outline"
-                    className="hover:scale-110 transition-all duration-500"
-                  >
-                    Отмена
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
-                    <Icon name="User" className="text-white" size={40} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-xl">{profileData.name}</h3>
-                    <p className="text-sm text-muted-foreground">{profileData.position}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon name="MapPin" size={18} className="text-primary" />
-                  <span className="font-semibold text-sm">Пункт выдачи</span>
-                </div>
-                <p className="text-sm">{profileData.pvzNumber}</p>
-                <p className="text-sm text-muted-foreground">{profileData.address}</p>
-              </div>
-
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <Icon name="BarChart" size={18} className="text-primary" />
-                  <span className="font-semibold text-sm">Статистика сегодня</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-2xl font-bold text-primary">{stats.total}</p>
-                    <p className="text-xs text-muted-foreground">Всего заказов</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-green-500">{stats.issued}</p>
-                    <p className="text-xs text-muted-foreground">Выдано</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-orange-500">{stats.waiting}</p>
-                    <p className="text-xs text-muted-foreground">Ожидают</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-red-500">{stats.returned}</p>
-                    <p className="text-xs text-muted-foreground">Возвраты</p>
-                  </div>
-                </div>
-              </div>
-
-                  <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Эффективность</p>
-                        <p className="text-2xl font-bold text-primary">
-                          {stats.total > 0 ? Math.round((stats.issued / stats.total) * 100) : 0}%
-                        </p>
-                      </div>
-                      <Icon name="TrendingUp" size={40} className="text-primary opacity-20" />
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Icon name="Wallet" size={18} className="text-green-600" />
-                        <span className="font-semibold text-sm">Зарплата</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">
-                          {profileData.salary.toLocaleString('ru-RU')} ₽
-                        </p>
-                        <p className="text-xs text-muted-foreground">30% от выданных заказов</p>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => {
-                        if (profileData.salary === 0) {
-                          toast({
-                            title: 'Недостаточно средств',
-                            description: 'Зарплата еще не начислена',
-                            variant: 'destructive',
-                          });
-                          return;
-                        }
-                        setIsWithdrawing(true);
-                        setTimeout(() => {
-                          setProfileData(prev => ({ ...prev, salary: 0 }));
-                          setIsWithdrawing(false);
-                          toast({
-                            title: 'Деньги были выведены!',
-                            description: `Выведено ${profileData.salary.toLocaleString('ru-RU')} ₽`,
-                          });
-                        }, 1000);
-                      }}
-                      disabled={profileData.salary === 0 || isWithdrawing}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:scale-110 transition-all duration-500"
-                    >
-                      {isWithdrawing ? (
-                        <>
-                          <Icon name="Loader" size={16} className="mr-2 animate-spin" />
-                          Обработка...
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="CreditCard" size={16} className="mr-2" />
-                          Вывести
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isCreatingOrder} onOpenChange={setIsCreatingOrder}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Icon name="Plus" size={20} />
-              Создать новый заказ
+              <Icon name="Undo2" size={20} />
+              Оформление возврата
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="itemCount">Количество товаров в заказе</Label>
-              <Input
-                id="itemCount"
-                type="number"
-                min="1"
-                max="100"
-                value={orderItemCount}
-                onChange={(e) => setOrderItemCount(e.target.value)}
-                placeholder="Введите количество"
-              />
-              <p className="text-xs text-muted-foreground">
-                Товары и цены будут сгенерированы автоматически
-              </p>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="returnReason">Причина возврата</Label>
+              <RadioGroup value={returnReason} onValueChange={setReturnReason}>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="Не подошёл размер" id="size" />
+                  <Label htmlFor="size" className="cursor-pointer flex-1">Не подошёл размер</Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="Брак товара" id="defect" />
+                  <Label htmlFor="defect" className="cursor-pointer flex-1">Брак товара</Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="Не соответствует описанию" id="description" />
+                  <Label htmlFor="description" className="cursor-pointer flex-1">Не соответствует описанию</Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                  <RadioGroupItem value="Передумал" id="changed_mind" />
+                  <Label htmlFor="changed_mind" className="cursor-pointer flex-1">Передумал</Label>
+                </div>
+              </RadioGroup>
             </div>
             <div className="flex gap-2">
-              <Button 
-                onClick={createOrder}
-                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-110 transition-all duration-500"
+              <Button
+                onClick={returnOrder}
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:scale-110 transition-all duration-500"
               >
                 <Icon name="Check" size={16} className="mr-2" />
-                Создать
+                Оформить возврат
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
-                  setIsCreatingOrder(false);
-                  setOrderItemCount('5');
+                  setIsReturnDialogOpen(false);
+                  setReturnReason('');
                 }}
                 variant="outline"
                 className="hover:scale-110 transition-all duration-500"
@@ -1220,11 +1085,11 @@ const Index = () => {
       </Dialog>
 
       <Dialog open={isInternsOpen} onOpenChange={setIsInternsOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Icon name="Users" size={20} />
-              Стажёры
+              Управление стажёрами
             </DialogTitle>
           </DialogHeader>
           
@@ -1288,54 +1153,342 @@ const Index = () => {
                 <p className="text-sm mt-2">Добавьте первого стажёра для начала работы</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {interns.map((intern) => (
-                  <Card key={intern.id} className="p-4 hover:shadow-lg transition-all duration-300 border-l-4 border-l-purple-600">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Icon name="User" className="text-white" size={20} />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg">{intern.name} {intern.surname}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Стажёр • С {new Date(intern.createdAt).toLocaleDateString('ru-RU')}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <Badge className="bg-green-100 text-green-700 border-green-300">
-                              <Icon name="Wallet" size={12} className="mr-1" />
-                              {intern.salary.toLocaleString('ru-RU')} ₽
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {interns.map((intern) => {
+                  const efficiency = getEfficiencyLevel(intern);
+                  return (
+                    <Card 
+                      key={intern.id} 
+                      className="p-4 hover:shadow-xl transition-all duration-300 border-l-4 border-l-purple-600 cursor-pointer"
+                      onClick={() => {
+                        setSelectedIntern(intern);
+                        setIsInternProfileOpen(true);
+                      }}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Icon name="User" className="text-white" size={20} />
+                            </div>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg">{intern.name} {intern.surname}</h3>
+                              <p className="text-xs text-muted-foreground">
+                                С {new Date(intern.createdAt).toLocaleDateString('ru-RU')}
+                              </p>
+                            </div>
+                          </div>
+                          {intern.warns.length > 0 && (
+                            <Badge variant="destructive" className="flex items-center gap-1">
+                              <Icon name="AlertTriangle" size={12} />
+                              {intern.warns.length}
                             </Badge>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Эффективность</span>
+                            <Badge 
+                              className={`
+                                ${efficiency.color === 'purple' ? 'bg-purple-100 text-purple-700 border-purple-300' : ''}
+                                ${efficiency.color === 'blue' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                                ${efficiency.color === 'green' ? 'bg-green-100 text-green-700 border-green-300' : ''}
+                                ${efficiency.color === 'yellow' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : ''}
+                                ${efficiency.color === 'red' ? 'bg-red-100 text-red-700 border-red-300' : ''}
+                                ${efficiency.color === 'gray' ? 'bg-gray-100 text-gray-700 border-gray-300' : ''}
+                              `}
+                            >
+                              {efficiency.level}
+                            </Badge>
+                          </div>
+                          <Progress value={efficiency.progress} className="h-2" />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="flex items-center gap-1 text-green-600">
+                            <Icon name="CheckCircle" size={14} />
+                            <span className="font-semibold">{intern.issuedOrders}</span>
+                            <span className="text-muted-foreground">выдано</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-red-600">
+                            <Icon name="XCircle" size={14} />
+                            <span className="font-semibold">{intern.returnedOrders}</span>
+                            <span className="text-muted-foreground">возврат</span>
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Icon name="Wallet" size={16} className="text-purple-600" />
+                            <span className="font-bold text-purple-600">{intern.salary.toLocaleString('ru-RU')} ₽</span>
+                          </div>
+                          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                            {intern.salary > 0 && (
+                              <Button
+                                size="sm"
+                                onClick={() => withdrawInternSalary(intern.id)}
+                                className="bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-700 hover:to-emerald-600 h-8 px-3"
+                              >
+                                <Icon name="Banknote" size={14} />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedIntern(intern);
+                                setIsWarnDialogOpen(true);
+                              }}
+                              className="border-orange-500 text-orange-600 hover:bg-orange-50 h-8 px-3"
+                            >
+                              <Icon name="AlertTriangle" size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeIntern(intern.id);
+                              }}
+                              className="border-red-500 text-red-600 hover:bg-red-50 h-8 px-3"
+                            >
+                              <Icon name="UserMinus" size={14} />
+                            </Button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        {intern.salary > 0 && (
-                          <Button
-                            size="sm"
-                            onClick={() => withdrawInternSalary(intern.id)}
-                            className="bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:scale-110 transition-all duration-500"
-                          >
-                            <Icon name="Banknote" size={14} className="mr-1" />
-                            Вывести
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => removeIntern(intern.id)}
-                          className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
-                        >
-                          <Icon name="UserMinus" size={14} className="mr-1" />
-                          Уволить
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isInternProfileOpen} onOpenChange={setIsInternProfileOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="UserCircle" size={24} />
+              Профиль стажёра
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedIntern && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Icon name="User" className="text-white" size={32} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold">{selectedIntern.name} {selectedIntern.surname}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Работает с {new Date(selectedIntern.createdAt).toLocaleDateString('ru-RU', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge className={`
+                      ${getEfficiencyLevel(selectedIntern).color === 'purple' ? 'bg-purple-100 text-purple-700 border-purple-300' : ''}
+                      ${getEfficiencyLevel(selectedIntern).color === 'blue' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                      ${getEfficiencyLevel(selectedIntern).color === 'green' ? 'bg-green-100 text-green-700 border-green-300' : ''}
+                      ${getEfficiencyLevel(selectedIntern).color === 'yellow' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : ''}
+                      ${getEfficiencyLevel(selectedIntern).color === 'red' ? 'bg-red-100 text-red-700 border-red-300' : ''}
+                      ${getEfficiencyLevel(selectedIntern).color === 'gray' ? 'bg-gray-100 text-gray-700 border-gray-300' : ''}
+                    `}>
+                      {getEfficiencyLevel(selectedIntern).level}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4 border-2 border-green-100 bg-gradient-to-br from-green-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <Icon name="CheckCircle" className="text-green-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Выдано заказов</p>
+                      <p className="text-2xl font-bold text-green-600">{selectedIntern.issuedOrders}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 border-2 border-red-100 bg-gradient-to-br from-red-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <Icon name="XCircle" className="text-red-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Возвратов</p>
+                      <p className="text-2xl font-bold text-red-600">{selectedIntern.returnedOrders}</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Icon name="Wallet" className="text-purple-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Текущий баланс</p>
+                      <p className="text-2xl font-bold text-purple-600">{selectedIntern.salary.toLocaleString('ru-RU')} ₽</p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Icon name="TrendingUp" className="text-blue-600" size={24} />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Всего заработано</p>
+                      <p className="text-2xl font-bold text-blue-600">{selectedIntern.totalEarned.toLocaleString('ru-RU')} ₽</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {selectedIntern.warns.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Icon name="AlertTriangle" size={18} className="text-orange-600" />
+                    Предупреждения ({selectedIntern.warns.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedIntern.warns.map((warn) => (
+                      <Card key={warn.id} className="p-3 border-l-4 border-l-orange-500 bg-orange-50/50">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-orange-900">{warn.reason}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(warn.date).toLocaleDateString('ru-RU', { 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })} • {warn.issuedBy}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeWarn(selectedIntern.id, warn.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Icon name="X" size={16} />
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    setIsWarnDialogOpen(true);
+                    setIsInternProfileOpen(false);
+                  }}
+                  variant="outline"
+                  className="flex-1 border-orange-500 text-orange-600 hover:bg-orange-50"
+                >
+                  <Icon name="AlertTriangle" size={16} className="mr-2" />
+                  Выдать предупреждение
+                </Button>
+                {selectedIntern.salary > 0 && (
+                  <Button
+                    onClick={() => {
+                      withdrawInternSalary(selectedIntern.id);
+                      setIsInternProfileOpen(false);
+                    }}
+                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-700 hover:to-emerald-600"
+                  >
+                    <Icon name="Banknote" size={16} className="mr-2" />
+                    Выплатить {selectedIntern.salary.toLocaleString('ru-RU')} ₽
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWarnDialogOpen} onOpenChange={setIsWarnDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="AlertTriangle" size={20} className="text-orange-600" />
+              Выдать предупреждение
+            </DialogTitle>
+          </DialogHeader>
+          {selectedIntern && (
+            <div className="space-y-4">
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="font-medium">{selectedIntern.name} {selectedIntern.surname}</p>
+                <p className="text-sm text-muted-foreground">Текущих предупреждений: {selectedIntern.warns.length}</p>
+              </div>
+              
+              <div>
+                <Label htmlFor="warnReason">Причина предупреждения</Label>
+                <RadioGroup value={warnReason} onValueChange={setWarnReason}>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Опоздание на смену" id="late" />
+                    <Label htmlFor="late" className="cursor-pointer flex-1">Опоздание на смену</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Грубость с клиентом" id="rude" />
+                    <Label htmlFor="rude" className="cursor-pointer flex-1">Грубость с клиентом</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Ошибка при выдаче заказа" id="mistake" />
+                    <Label htmlFor="mistake" className="cursor-pointer flex-1">Ошибка при выдаче заказа</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Несоблюдение дресс-кода" id="dress" />
+                    <Label htmlFor="dress" className="cursor-pointer flex-1">Несоблюдение дресс-кода</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Нарушение правил ПВЗ" id="rules" />
+                    <Label htmlFor="rules" className="cursor-pointer flex-1">Нарушение правил ПВЗ</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={addWarnToIntern}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <Icon name="AlertTriangle" size={16} className="mr-2" />
+                  Выдать предупреждение
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsWarnDialogOpen(false);
+                    setWarnReason('');
+                    setIsInternProfileOpen(true);
+                  }}
+                  variant="outline"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
