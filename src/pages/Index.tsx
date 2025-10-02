@@ -174,6 +174,7 @@ const Index = () => {
   const [warnReason, setWarnReason] = useState('');
   const [bulkOrderCount, setBulkOrderCount] = useState(1);
   const [isBulkOrderOpen, setIsBulkOrderOpen] = useState(false);
+  const [isCuratorProfileOpen, setIsCuratorProfileOpen] = useState(false);
 
   const [appTheme, setAppTheme] = useState({
     primaryColor: '#8b5cf6',
@@ -530,7 +531,7 @@ const Index = () => {
             </Button>
 
             <Button 
-              onClick={withdrawCuratorBalance}
+              onClick={() => setIsCuratorProfileOpen(true)}
               variant="outline"
               className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white hover:scale-110 transition-all duration-500"
             >
@@ -1516,6 +1517,117 @@ const Index = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCuratorProfileOpen} onOpenChange={setIsCuratorProfileOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="UserCircle" size={24} />
+              Профиль куратора
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <Icon name="Crown" className="text-white" size={32} />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold">Куратор ПВЗ</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Главный менеджер пункта выдачи
+                </p>
+                <Badge className="mt-2 bg-purple-100 text-purple-700 border-purple-300">
+                  Администратор
+                </Badge>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="p-4 border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Icon name="Wallet" className="text-purple-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Текущий баланс</p>
+                    <p className="text-2xl font-bold text-purple-600">{curatorBalance.toLocaleString('ru-RU')} ₽</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border-2 border-green-100 bg-gradient-to-br from-green-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <Icon name="CheckCircle" className="text-green-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Всего заказов</p>
+                    <p className="text-2xl font-bold text-green-600">{orders.length}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Icon name="Users" className="text-blue-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Стажёров</p>
+                    <p className="text-2xl font-bold text-blue-600">{interns.length}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 border-2 border-orange-100 bg-gradient-to-br from-orange-50 to-white">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Icon name="TrendingUp" className="text-orange-600" size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Выдано заказов</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {orders.filter(o => o.status === 'issued').length}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {curatorBalance > 0 && (
+              <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-green-900">Доступно к выводу</p>
+                    <p className="text-sm text-green-700">Нажмите кнопку для вывода средств</p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      withdrawCuratorBalance();
+                      setIsCuratorProfileOpen(false);
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-700 hover:to-emerald-600 hover:scale-110 transition-all duration-500"
+                  >
+                    <Icon name="Banknote" size={18} className="mr-2" />
+                    Вывести {curatorBalance.toLocaleString('ru-RU')} ₽
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsCuratorProfileOpen(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Закрыть
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
