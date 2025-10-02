@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,10 +20,11 @@ interface Order {
   id: string;
   customerName: string;
   barcode: string;
-  status: 'waiting' | 'issued';
+  status: 'waiting' | 'issued' | 'returned';
   createdAt: string;
   items: OrderItem[];
   totalPrice: number;
+  returnReason?: string;
 }
 
 const Index = () => {
@@ -66,31 +69,43 @@ const Index = () => {
     return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   };
 
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: '1',
-      customerName: 'Иван Петров',
-      barcode: '8B0301927',
-      status: 'waiting',
-      createdAt: new Date().toISOString(),
-      items: generateRandomItems(),
-      totalPrice: 0,
-    },
-    {
-      id: '2',
-      customerName: 'Мария Сидорова',
-      barcode: '8B0301928',
-      status: 'waiting',
-      createdAt: new Date().toISOString(),
-      items: generateRandomItems(),
-      totalPrice: 0,
-    },
-  ].map(order => ({ ...order, totalPrice: calculateTotal(order.items) })));
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('wildberries_orders');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [
+      {
+        id: '1',
+        customerName: 'Иван Петров',
+        barcode: '8B0301927',
+        status: 'waiting' as const,
+        createdAt: new Date().toISOString(),
+        items: generateRandomItems(),
+        totalPrice: 0,
+      },
+      {
+        id: '2',
+        customerName: 'Мария Сидорова',
+        barcode: '8B0301928',
+        status: 'waiting' as const,
+        createdAt: new Date().toISOString(),
+        items: generateRandomItems(),
+        totalPrice: 0,
+      },
+    ].map(order => ({ ...order, totalPrice: calculateTotal(order.items) }));
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('wildberries_orders', JSON.stringify(orders));
+  }, [orders]);
 
   const generateBarcode = () => {
     return '8B' + Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
@@ -127,6 +142,32 @@ const Index = () => {
     });
   };
 
+  const returnOrder = () => {
+    if (!selectedOrder || !returnReason) {
+      toast({
+        title: 'Ошибка',
+        description: 'Выберите причину возврата',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setOrders(orders.map(order => 
+      order.id === selectedOrder.id 
+        ? { ...order, status: 'returned' as const, returnReason } 
+        : order
+    ));
+    
+    setIsReturnDialogOpen(false);
+    setIsDetailsOpen(false);
+    setReturnReason('');
+    
+    toast({
+      title: 'Возврат оформлен',
+      description: `Причина: ${returnReason}`,
+    });
+  };
+
   const filteredOrders = orders.filter(order => 
     order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     order.barcode.includes(searchQuery)
@@ -134,11 +175,13 @@ const Index = () => {
 
   const waitingOrders = filteredOrders.filter(o => o.status === 'waiting');
   const issuedOrders = filteredOrders.filter(o => o.status === 'issued');
+  const returnedOrders = filteredOrders.filter(o => o.status === 'returned');
 
   const stats = {
     total: orders.length,
     waiting: orders.filter(o => o.status === 'waiting').length,
     issued: orders.filter(o => o.status === 'issued').length,
+    returned: orders.filter(o => o.status === 'returned').length,
   };
 
   return (
@@ -170,7 +213,7 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 animate-fade-in">
           <Card className="border-l-4 border-l-primary hover:shadow-lg transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Всего заказов</CardTitle>
@@ -197,6 +240,15 @@ const Index = () => {
               <div className="text-3xl font-bold text-green-500">{stats.issued}</div>
             </CardContent>
           </Card>
+
+          <Card className="border-l-4 border-l-red-500 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Возвраты</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-red-500">{stats.returned}</div>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="shadow-lg">
@@ -216,7 +268,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="waiting" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="waiting" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
                   <Icon name="Clock" size={16} className="mr-2" />
                   Ожидают ({waitingOrders.length})
@@ -224,6 +276,10 @@ const Index = () => {
                 <TabsTrigger value="issued" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
                   <Icon name="CheckCircle" size={16} className="mr-2" />
                   Выданные ({issuedOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="returned" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
+                  <Icon name="Undo2" size={16} className="mr-2" />
+                  Возвраты ({returnedOrders.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -234,8 +290,12 @@ const Index = () => {
                     <p>Нет заказов, ожидающих выдачи</p>
                   </div>
                 ) : (
-                  waitingOrders.map((order) => (
-                    <Card key={order.id} className="hover:shadow-md transition-shadow border-l-4 border-l-orange-500">
+                  waitingOrders.map((order, index) => (
+                    <Card 
+                      key={order.id} 
+                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-orange-500 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
                       <CardContent className="pt-6">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                           <div className="flex items-start gap-4 flex-1">
@@ -295,8 +355,12 @@ const Index = () => {
                     <p>Нет выданных заказов</p>
                   </div>
                 ) : (
-                  issuedOrders.map((order) => (
-                    <Card key={order.id} className="hover:shadow-md transition-shadow border-l-4 border-l-green-500 opacity-75">
+                  issuedOrders.map((order, index) => (
+                    <Card 
+                      key={order.id} 
+                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-green-500 opacity-75 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -320,6 +384,81 @@ const Index = () => {
                               <span className="font-bold text-green-600">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
                             </div>
                           </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsDetailsOpen(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="border-green-500 text-green-600 hover:bg-green-50"
+                            >
+                              <Icon name="Eye" size={16} className="mr-2" />
+                              Состав
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsReturnDialogOpen(true);
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="border-red-500 text-red-600 hover:bg-red-50"
+                            >
+                              <Icon name="Undo2" size={16} className="mr-2" />
+                              Возврат
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="returned" className="space-y-4">
+                {returnedOrders.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Icon name="Undo2" size={48} className="mx-auto mb-4 opacity-20" />
+                    <p>Нет возвращенных заказов</p>
+                  </div>
+                ) : (
+                  returnedOrders.map((order, index) => (
+                    <Card 
+                      key={order.id} 
+                      className="hover:shadow-md transition-all hover:scale-[1.02] border-l-4 border-l-red-500 animate-fade-in"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      <CardContent className="pt-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Icon name="User" className="text-red-600" size={24} />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg mb-1">{order.customerName}</h3>
+                            <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Icon name="Barcode" size={16} />
+                                <span className="font-mono">{order.barcode}</span>
+                              </div>
+                              <Badge variant="outline" className="border-red-500 text-red-600">
+                                <Icon name="Undo2" size={12} className="mr-1" />
+                                Возврат
+                              </Badge>
+                            </div>
+                            <div className="mt-2 text-sm">
+                              <span className="font-medium">{order.items.length} товаров</span>
+                              <span className="mx-2">•</span>
+                              <span className="font-bold text-red-600">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
+                            </div>
+                            {order.returnReason && (
+                              <div className="mt-2 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                                <span className="font-medium text-red-800">Причина: </span>
+                                <span className="text-red-700">{order.returnReason}</span>
+                              </div>
+                            )}
+                          </div>
                           <Button 
                             onClick={() => {
                               setSelectedOrder(order);
@@ -327,7 +466,7 @@ const Index = () => {
                             }}
                             variant="outline"
                             size="sm"
-                            className="border-green-500 text-green-600 hover:bg-green-50"
+                            className="border-red-500 text-red-600 hover:bg-red-50"
                           >
                             <Icon name="Eye" size={16} className="mr-2" />
                             Состав
@@ -403,6 +542,53 @@ const Index = () => {
                   </span>
                 </div>
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-xl">Оформление возврата</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="font-semibold">{selectedOrder.customerName}</p>
+                <p className="text-sm text-muted-foreground font-mono">{selectedOrder.barcode}</p>
+              </div>
+              
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Причина возврата</Label>
+                <RadioGroup value={returnReason} onValueChange={setReturnReason}>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Не подошло" id="reason1" />
+                    <Label htmlFor="reason1" className="cursor-pointer flex-1">Не подошло</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Брак" id="reason2" />
+                    <Label htmlFor="reason2" className="cursor-pointer flex-1">Брак</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Передумал брать" id="reason3" />
+                    <Label htmlFor="reason3" className="cursor-pointer flex-1">Передумал брать</Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    <RadioGroupItem value="Не понравилось" id="reason4" />
+                    <Label htmlFor="reason4" className="cursor-pointer flex-1">Не понравилось</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              <Button 
+                onClick={returnOrder}
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90"
+                disabled={!returnReason}
+              >
+                <Icon name="Undo2" size={16} className="mr-2" />
+                Оформить возврат
+              </Button>
             </div>
           )}
         </DialogContent>
