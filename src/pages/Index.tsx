@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +30,18 @@ const Index = () => {
     'Шорты', 'Пальто', 'Кеды', 'Сумка', 'Рюкзак', 'Шапка', 'Шарф', 'Перчатки',
     'Носки', 'Белье', 'Пижама', 'Спортивный костюм', 'Блузка', 'Брюки', 'Ремень', 'Очки'
   ];
+
+  const firstNames = ['Александр', 'Дмитрий', 'Иван', 'Сергей', 'Андрей', 'Алексей', 'Михаил', 'Владимир',
+    'Анна', 'Мария', 'Елена', 'Ольга', 'Татьяна', 'Наталья', 'Екатерина', 'Ирина'];
+  
+  const lastNames = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов', 'Васильев', 'Соколов',
+    'Иванова', 'Петрова', 'Сидорова', 'Смирнова', 'Кузнецова', 'Попова', 'Васильева', 'Соколова'];
+
+  const generateRandomName = (): string => {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    return `${firstName} ${lastName}`;
+  };
 
   const generateRandomItems = (): OrderItem[] => {
     const itemCount = Math.floor(Math.random() * 50) + 1;
@@ -77,8 +88,6 @@ const Index = () => {
   ].map(order => ({ ...order, totalPrice: calculateTotal(order.items) })));
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [newOrderName, setNewOrderName] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
@@ -88,19 +97,10 @@ const Index = () => {
   };
 
   const createOrder = () => {
-    if (!newOrderName.trim()) {
-      toast({
-        title: 'Ошибка',
-        description: 'Введите имя получателя',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     const items = generateRandomItems();
     const newOrder: Order = {
       id: Date.now().toString(),
-      customerName: newOrderName,
+      customerName: generateRandomName(),
       barcode: generateBarcode(),
       status: 'waiting',
       createdAt: new Date().toISOString(),
@@ -109,12 +109,10 @@ const Index = () => {
     };
 
     setOrders([newOrder, ...orders]);
-    setNewOrderName('');
-    setIsDialogOpen(false);
     
     toast({
       title: 'Заказ создан',
-      description: `${items.length} товаров на ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
+      description: `${newOrder.customerName} • ${items.length} товаров на ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
     });
   };
 
@@ -160,34 +158,13 @@ const Index = () => {
               </div>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg">
-                  <Icon name="Plus" size={20} className="mr-2" />
-                  Создать заказ
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle className="text-xl">Новый заказ</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="customerName">Имя получателя</Label>
-                    <Input
-                      id="customerName"
-                      placeholder="Введите имя"
-                      value={newOrderName}
-                      onChange={(e) => setNewOrderName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && createOrder()}
-                    />
-                  </div>
-                  <Button onClick={createOrder} className="w-full bg-gradient-to-r from-primary to-secondary">
-                    Создать заказ
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button 
+              onClick={createOrder}
+              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
+            >
+              <Icon name="Plus" size={20} className="mr-2" />
+              Создать заказ
+            </Button>
           </div>
         </div>
       </div>
