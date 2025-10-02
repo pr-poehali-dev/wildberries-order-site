@@ -148,8 +148,6 @@ const Index = () => {
 
   useEffect(() => {
     localStorage.setItem('wildberries_theme', JSON.stringify(appTheme));
-    document.documentElement.style.setProperty('--primary', appTheme.primaryColor);
-    document.documentElement.style.setProperty('--accent', appTheme.accentColor);
   }, [appTheme]);
 
   useEffect(() => {
@@ -265,11 +263,11 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
                 <Icon name="Package" className="text-white" size={24} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-purple-500 bg-clip-text text-transparent">
                   Wildberries ПВЗ
                 </h1>
                 <p className="text-sm text-muted-foreground">Система управления выдачей</p>
@@ -279,7 +277,7 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <Button 
                 onClick={() => setIsCreatingOrder(true)}
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 text-white hover:scale-110 transition-all duration-500 shadow-lg hover:shadow-2xl"
               >
                 <Icon name="Plus" size={20} className="mr-2" />
                 Создать заказ
@@ -288,7 +286,7 @@ const Index = () => {
               <Button 
                 onClick={() => setIsSettingsOpen(true)}
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
               >
                 <Icon name="Settings" size={20} className="mr-2" />
                 Настройки
@@ -297,7 +295,7 @@ const Index = () => {
               <Button 
                 onClick={() => setIsProfileOpen(true)}
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300"
+                className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
               >
                 <Icon name="User" size={20} className="mr-2" />
                 Профиль
@@ -309,7 +307,7 @@ const Index = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card className="border-l-4 border-l-primary hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
+          <Card className="border-l-4 border-l-purple-600 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Всего заказов</CardTitle>
             </CardHeader>
@@ -318,7 +316,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
+          <Card className="border-l-4 border-l-orange-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Ожидают выдачи</CardTitle>
             </CardHeader>
@@ -327,7 +325,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
+          <Card className="border-l-4 border-l-green-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Выдано сегодня</CardTitle>
             </CardHeader>
@@ -336,7 +334,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
+          <Card className="border-l-4 border-l-red-500 hover:shadow-xl hover:scale-110 hover:-translate-y-2 transition-all duration-500 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Возвраты</CardTitle>
             </CardHeader>
@@ -346,7 +344,7 @@ const Index = () => {
           </Card>
         </div>
 
-        <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-500">
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CardTitle className="text-xl">Управление заказами</CardTitle>
@@ -366,21 +364,21 @@ const Index = () => {
               <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger 
                   value="waiting" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
                 >
                   <Icon name="Clock" size={16} className="mr-2" />
                   Ожидают ({waitingOrders.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="issued" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
                 >
                   <Icon name="CheckCircle" size={16} className="mr-2" />
                   Выданные ({issuedOrders.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="returned" 
-                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-500 data-[state=active]:text-white transition-all duration-500 hover:scale-110 data-[state=active]:animate-bounce-in"
                 >
                   <Icon name="Undo2" size={16} className="mr-2" />
                   Возвраты ({returnedOrders.length})
@@ -432,14 +430,14 @@ const Index = () => {
                                 setIsDetailsOpen(true);
                               }}
                               variant="outline"
-                              className="border-primary text-primary hover:bg-primary/10"
+                              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Eye" size={16} className="mr-2" />
                               Состав
                             </Button>
                             <Button 
                               onClick={() => issueOrder(order.id)}
-                              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md"
+                              className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Check" size={16} className="mr-2" />
                               Выдать
@@ -450,7 +448,7 @@ const Index = () => {
                                 setIsReturnDialogOpen(true);
                               }}
                               variant="outline"
-                              className="border-red-500 text-red-600 hover:bg-red-50"
+                              className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Undo2" size={16} className="mr-2" />
                               Возврат
@@ -507,7 +505,7 @@ const Index = () => {
                               }}
                               variant="outline"
                               size="sm"
-                              className="border-green-500 text-green-600 hover:bg-green-50"
+                              className="border-green-500 text-green-600 hover:bg-green-50 hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Eye" size={16} className="mr-2" />
                               Состав
@@ -519,7 +517,7 @@ const Index = () => {
                               }}
                               variant="outline"
                               size="sm"
-                              className="border-red-500 text-red-600 hover:bg-red-50"
+                              className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
                             >
                               <Icon name="Undo2" size={16} className="mr-2" />
                               Возврат
@@ -581,7 +579,7 @@ const Index = () => {
                             }}
                             variant="outline"
                             size="sm"
-                            className="border-red-500 text-red-600 hover:bg-red-50"
+                            className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
                           >
                             <Icon name="Eye" size={16} className="mr-2" />
                             Состав
@@ -606,7 +604,7 @@ const Index = () => {
             <div className="space-y-4">
               <div className="border-b pb-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-500 rounded-lg flex items-center justify-center">
                     <Icon name="User" className="text-white" size={20} />
                   </div>
                   <div>
@@ -698,7 +696,7 @@ const Index = () => {
 
               <Button 
                 onClick={returnOrder}
-                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:opacity-90"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 hover:scale-110 transition-all duration-500"
                 disabled={!returnReason}
               >
                 <Icon name="Undo2" size={16} className="mr-2" />
@@ -725,7 +723,7 @@ const Index = () => {
                   }}
                   variant="outline"
                   size="sm"
-                  className="border-primary text-primary hover:bg-primary/10"
+                  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
                 >
                   <Icon name="Pencil" size={16} className="mr-2" />
                   Редактировать
@@ -778,7 +776,7 @@ const Index = () => {
                         description: 'Данные успешно сохранены',
                       });
                     }}
-                    className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-110 transition-all duration-500"
                   >
                     <Icon name="Save" size={16} className="mr-2" />
                     Сохранить
@@ -789,6 +787,7 @@ const Index = () => {
                       setTempProfileData(profileData);
                     }}
                     variant="outline"
+                    className="hover:scale-110 transition-all duration-500"
                   >
                     Отмена
                   </Button>
@@ -797,7 +796,7 @@ const Index = () => {
             ) : (
               <>
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+                  <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-purple-500 rounded-full flex items-center justify-center shadow-lg">
                     <Icon name="User" className="text-white" size={40} />
                   </div>
                   <div className="flex-1">
@@ -887,7 +886,7 @@ const Index = () => {
                         }, 1000);
                       }}
                       disabled={profileData.salary === 0 || isWithdrawing}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:opacity-90"
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 hover:scale-110 transition-all duration-500"
                     >
                       {isWithdrawing ? (
                         <>
@@ -936,7 +935,7 @@ const Index = () => {
             <div className="flex gap-2">
               <Button 
                 onClick={createOrder}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:scale-105 transition-all duration-300"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-110 transition-all duration-500"
               >
                 <Icon name="Check" size={16} className="mr-2" />
                 Создать
@@ -947,7 +946,7 @@ const Index = () => {
                   setOrderItemCount('5');
                 }}
                 variant="outline"
-                className="hover:scale-105 transition-all duration-300"
+                className="hover:scale-110 transition-all duration-500"
               >
                 Отмена
               </Button>
@@ -1023,7 +1022,7 @@ const Index = () => {
                 </p>
                 <div className="space-y-2">
                   <Button 
-                    className="w-full bg-gradient-to-r hover:scale-105 transition-all duration-300 animate-shimmer"
+                    className="w-full bg-gradient-to-r text-white hover:scale-110 transition-all duration-500 animate-shimmer"
                     style={{
                       backgroundImage: `linear-gradient(to right, ${appTheme.primaryColor}, ${appTheme.accentColor})`,
                       color: 'white'
@@ -1046,7 +1045,7 @@ const Index = () => {
                   });
                 }}
                 variant="outline"
-                className="flex-1 hover:scale-105 transition-all duration-300"
+                className="flex-1 hover:scale-110 transition-all duration-500"
               >
                 <Icon name="RotateCcw" size={16} className="mr-2" />
                 Сбросить
@@ -1059,7 +1058,7 @@ const Index = () => {
                     description: 'Изменения применены',
                   });
                 }}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:scale-105 transition-all duration-300"
+                className="flex-1 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 hover:scale-110 transition-all duration-500"
               >
                 <Icon name="Check" size={16} className="mr-2" />
                 Готово
