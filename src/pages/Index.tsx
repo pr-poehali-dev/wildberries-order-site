@@ -116,6 +116,14 @@ const Index = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [orderItemCount, setOrderItemCount] = useState('5');
+  const [appTheme, setAppTheme] = useState(() => {
+    const saved = localStorage.getItem('wildberries_theme');
+    return saved ? JSON.parse(saved) : {
+      primaryColor: '#8b5cf6',
+      accentColor: '#a855f7'
+    };
+  });
+
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('wildberries_profile');
     if (saved) {
@@ -135,7 +143,14 @@ const Index = () => {
   });
   const [tempProfileData, setTempProfileData] = useState(profileData);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem('wildberries_theme', JSON.stringify(appTheme));
+    document.documentElement.style.setProperty('--primary', appTheme.primaryColor);
+    document.documentElement.style.setProperty('--accent', appTheme.accentColor);
+  }, [appTheme]);
 
   useEffect(() => {
     localStorage.setItem('wildberries_profile', JSON.stringify(profileData));
@@ -264,16 +279,25 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <Button 
                 onClick={() => setIsCreatingOrder(true)}
-                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-lg"
+                className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
               >
                 <Icon name="Plus" size={20} className="mr-2" />
                 Создать заказ
               </Button>
               
               <Button 
+                onClick={() => setIsSettingsOpen(true)}
+                variant="outline"
+                className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300"
+              >
+                <Icon name="Settings" size={20} className="mr-2" />
+                Настройки
+              </Button>
+              
+              <Button 
                 onClick={() => setIsProfileOpen(true)}
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary/10"
+                className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-all duration-300"
               >
                 <Icon name="User" size={20} className="mr-2" />
                 Профиль
@@ -284,8 +308,8 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 animate-fade-in">
-          <Card className="border-l-4 border-l-primary hover:shadow-lg transition-shadow">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="border-l-4 border-l-primary hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Всего заказов</CardTitle>
             </CardHeader>
@@ -294,7 +318,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500 hover:shadow-lg transition-shadow">
+          <Card className="border-l-4 border-l-orange-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Ожидают выдачи</CardTitle>
             </CardHeader>
@@ -303,7 +327,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-shadow">
+          <Card className="border-l-4 border-l-green-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Выдано сегодня</CardTitle>
             </CardHeader>
@@ -312,7 +336,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-red-500 hover:shadow-lg transition-shadow">
+          <Card className="border-l-4 border-l-red-500 hover:shadow-xl hover:scale-105 transition-all duration-300 animate-bounce-in">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Возвраты</CardTitle>
             </CardHeader>
@@ -322,7 +346,7 @@ const Index = () => {
           </Card>
         </div>
 
-        <Card className="shadow-lg">
+        <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300">
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <CardTitle className="text-xl">Управление заказами</CardTitle>
@@ -912,7 +936,7 @@ const Index = () => {
             <div className="flex gap-2">
               <Button 
                 onClick={createOrder}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:scale-105 transition-all duration-300"
               >
                 <Icon name="Check" size={16} className="mr-2" />
                 Создать
@@ -923,8 +947,122 @@ const Index = () => {
                   setOrderItemCount('5');
                 }}
                 variant="outline"
+                className="hover:scale-105 transition-all duration-300"
               >
                 Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Settings" size={20} />
+              Настройки приложения
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 pt-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="primaryColor" className="text-sm font-semibold flex items-center gap-2">
+                  <Icon name="Palette" size={16} />
+                  Основной цвет
+                </Label>
+                <div className="flex gap-3">
+                  <input
+                    id="primaryColor"
+                    type="color"
+                    value={appTheme.primaryColor}
+                    onChange={(e) => setAppTheme({ ...appTheme, primaryColor: e.target.value })}
+                    className="w-20 h-12 rounded-lg cursor-pointer border-2 border-muted hover:scale-110 transition-transform"
+                  />
+                  <div className="flex-1">
+                    <Input
+                      value={appTheme.primaryColor}
+                      onChange={(e) => setAppTheme({ ...appTheme, primaryColor: e.target.value })}
+                      className="font-mono"
+                      placeholder="#8b5cf6"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Цвет кнопок и акцентов</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accentColor" className="text-sm font-semibold flex items-center gap-2">
+                  <Icon name="Sparkles" size={16} />
+                  Дополнительный цвет
+                </Label>
+                <div className="flex gap-3">
+                  <input
+                    id="accentColor"
+                    type="color"
+                    value={appTheme.accentColor}
+                    onChange={(e) => setAppTheme({ ...appTheme, accentColor: e.target.value })}
+                    className="w-20 h-12 rounded-lg cursor-pointer border-2 border-muted hover:scale-110 transition-transform"
+                  />
+                  <div className="flex-1">
+                    <Input
+                      value={appTheme.accentColor}
+                      onChange={(e) => setAppTheme({ ...appTheme, accentColor: e.target.value })}
+                      className="font-mono"
+                      placeholder="#a855f7"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Цвет градиентов</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-lg border border-muted">
+                <p className="text-sm font-semibold mb-2 flex items-center gap-2">
+                  <Icon name="Eye" size={16} />
+                  Предпросмотр
+                </p>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full bg-gradient-to-r hover:scale-105 transition-all duration-300 animate-shimmer"
+                    style={{
+                      backgroundImage: `linear-gradient(to right, ${appTheme.primaryColor}, ${appTheme.accentColor})`,
+                      color: 'white'
+                    }}
+                  >
+                    <Icon name="Sparkles" size={16} className="mr-2" />
+                    Пример кнопки
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => {
+                  setAppTheme({ primaryColor: '#8b5cf6', accentColor: '#a855f7' });
+                  toast({
+                    title: 'Цвета сброшены',
+                    description: 'Восстановлены стандартные цвета',
+                  });
+                }}
+                variant="outline"
+                className="flex-1 hover:scale-105 transition-all duration-300"
+              >
+                <Icon name="RotateCcw" size={16} className="mr-2" />
+                Сбросить
+              </Button>
+              <Button 
+                onClick={() => {
+                  setIsSettingsOpen(false);
+                  toast({
+                    title: 'Настройки сохранены',
+                    description: 'Изменения применены',
+                  });
+                }}
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:scale-105 transition-all duration-300"
+              >
+                <Icon name="Check" size={16} className="mr-2" />
+                Готово
               </Button>
             </div>
           </div>
