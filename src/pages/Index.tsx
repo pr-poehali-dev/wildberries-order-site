@@ -175,6 +175,9 @@ const Index = () => {
   const [bulkOrderCount, setBulkOrderCount] = useState(1);
   const [isBulkOrderOpen, setIsBulkOrderOpen] = useState(false);
   const [isCuratorProfileOpen, setIsCuratorProfileOpen] = useState(false);
+  const [isEditingIntern, setIsEditingIntern] = useState(false);
+  const [editInternName, setEditInternName] = useState('');
+  const [editInternSurname, setEditInternSurname] = useState('');
 
   const [appTheme, setAppTheme] = useState({
     primaryColor: '#8b5cf6',
@@ -251,8 +254,8 @@ const Index = () => {
         if (issuedBy === 'curator') {
           setCuratorBalance(prev => prev + commission);
         } else {
-          const curatorCommission = order.totalPrice * 0.05;
-          const internCommission = order.totalPrice * 0.25;
+          const curatorCommission = order.totalPrice * 0.03;
+          const internCommission = order.totalPrice * 0.10;
           
           setCuratorBalance(prev => prev + curatorCommission);
           setInterns(interns.map(intern => 
@@ -269,7 +272,7 @@ const Index = () => {
 
         toast({
           title: 'Заказ выдан',
-          description: `Начислено: ${commission.toFixed(0)} ₽`,
+          description: `Начислено: ${issuedBy === 'curator' ? commission.toFixed(0) : (order.totalPrice * 0.10).toFixed(0)} ₽`,
         });
         
         return { ...order, status: 'issued' as const, issuedBy };
@@ -278,7 +281,7 @@ const Index = () => {
     }));
   };
 
-  const returnOrder = () => {
+  const returnOrder = (returnForIntern?: string) => {
     if (!selectedOrder || !returnReason.trim()) {
       toast({
         title: 'Ошибка',
@@ -294,9 +297,21 @@ const Index = () => {
         
         if (order.issuedBy === 'curator') {
           setCuratorBalance(prev => Math.max(0, prev - commission));
+          if (returnForIntern) {
+            const internBonus = order.totalPrice * 0.03;
+            setInterns(interns.map(intern => 
+              intern.id === returnForIntern
+                ? { 
+                    ...intern, 
+                    salary: intern.salary + internBonus,
+                    totalEarned: intern.totalEarned + internBonus
+                  }
+                : intern
+            ));
+          }
         } else if (order.issuedBy) {
-          const curatorCommission = order.totalPrice * 0.05;
-          const internCommission = order.totalPrice * 0.25;
+          const curatorCommission = order.totalPrice * 0.03;
+          const internCommission = order.totalPrice * 0.10;
           
           setCuratorBalance(prev => Math.max(0, prev - curatorCommission));
           setInterns(interns.map(intern => 
@@ -308,6 +323,19 @@ const Index = () => {
                 }
               : intern
           ));
+          
+          if (returnForIntern && returnForIntern !== order.issuedBy) {
+            const internBonus = order.totalPrice * 0.03;
+            setInterns(prev => prev.map(intern => 
+              intern.id === returnForIntern
+                ? { 
+                    ...intern, 
+                    salary: intern.salary + internBonus,
+                    totalEarned: intern.totalEarned + internBonus
+                  }
+                : intern
+            ));
+          }
         }
 
         toast({
@@ -368,6 +396,35 @@ const Index = () => {
     toast({
       title: 'Стажёр уволен',
       description: 'Данные удалены из системы',
+    });
+  };
+
+  const updateInternInfo = () => {
+    if (!selectedIntern || !editInternName.trim() || !editInternSurname.trim()) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните все поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setInterns(interns.map(intern => 
+      intern.id === selectedIntern.id 
+        ? { ...intern, name: editInternName, surname: editInternSurname }
+        : intern
+    ));
+
+    setSelectedIntern({
+      ...selectedIntern,
+      name: editInternName,
+      surname: editInternSurname
+    });
+
+    setIsEditingIntern(false);
+    toast({
+      title: 'Данные обновлены',
+      description: `${editInternName} ${editInternSurname}`,
     });
   };
 
@@ -469,9 +526,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 animate-gradient p-4">
       <div className={`max-w-7xl mx-auto space-y-6 ${headerAnimation}`}>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white rounded-2xl p-6 shadow-lg border-2 border-purple-100">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border-2 border-purple-200/50 animate-glow-pulse">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent flex items-center gap-3">
               <Icon name="Package" size={40} className="text-purple-600" />
@@ -551,7 +608,7 @@ const Index = () => {
         </div>
 
         <div className={`grid grid-cols-1 md:grid-cols-4 gap-4 ${cardAnimation}`}>
-          <Card className="border-2 border-purple-100 hover:shadow-xl transition-all duration-500 hover:scale-105 bg-gradient-to-br from-purple-50 to-white">
+          <Card className="border-2 border-purple-200/50 hover:shadow-2xl transition-all duration-500 hover:scale-110 bg-gradient-to-br from-purple-100 via-purple-50 to-white animate-float overflow-hidden relative before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent before:translate-x-[-200%] hover:before:translate-x-[200%] before:transition-transform before:duration-1000">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Icon name="Clock" size={16} />
@@ -819,6 +876,55 @@ const Index = () => {
                               <Icon name="Undo2" size={16} className="mr-2" />
                               Возврат
                             </Button>
+                            {interns.length > 0 && (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    variant="outline"
+                                    className="border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white hover:scale-110 transition-all duration-500"
+                                  >
+                                    <Icon name="UserX" size={16} className="mr-2" />
+                                    Возврат за стажёра
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Оформить возврат за стажёра</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-4">
+                                    <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                      <p className="text-sm text-orange-900">
+                                        <Icon name="Info" size={14} className="inline mr-1" />
+                                        Стажёр получит бонус 3% от стоимости заказа
+                                      </p>
+                                    </div>
+                                    {interns.map(intern => (
+                                      <div key={intern.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                        <div>
+                                          <p className="font-medium">{intern.name} {intern.surname}</p>
+                                          <p className="text-sm text-muted-foreground">
+                                            Бонус: +{(order.totalPrice * 0.03).toFixed(0)} ₽
+                                          </p>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => {
+                                            setSelectedOrder(order);
+                                            setIsReturnDialogOpen(true);
+                                            const closeBtn = document.querySelector('[data-state="open"]')?.querySelector('button');
+                                            if (closeBtn instanceof HTMLElement) closeBtn.click();
+                                          }}
+                                          className="bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-700 hover:to-orange-600"
+                                        >
+                                          <Icon name="Undo2" size={14} className="mr-1" />
+                                          Оформить
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                            )}
                           </div>
                         </div>
                       </CardContent>
@@ -1314,27 +1420,79 @@ const Index = () => {
                   <Icon name="User" className="text-white" size={32} />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold">{selectedIntern.name} {selectedIntern.surname}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Работает с {new Date(selectedIntern.createdAt).toLocaleDateString('ru-RU', { 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge className={`
-                      ${getEfficiencyLevel(selectedIntern).color === 'purple' ? 'bg-purple-100 text-purple-700 border-purple-300' : ''}
-                      ${getEfficiencyLevel(selectedIntern).color === 'blue' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
-                      ${getEfficiencyLevel(selectedIntern).color === 'green' ? 'bg-green-100 text-green-700 border-green-300' : ''}
-                      ${getEfficiencyLevel(selectedIntern).color === 'yellow' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : ''}
-                      ${getEfficiencyLevel(selectedIntern).color === 'red' ? 'bg-red-100 text-red-700 border-red-300' : ''}
-                      ${getEfficiencyLevel(selectedIntern).color === 'gray' ? 'bg-gray-100 text-gray-700 border-gray-300' : ''}
-                    `}>
-                      {getEfficiencyLevel(selectedIntern).level}
-                    </Badge>
-                  </div>
+                  {!isEditingIntern ? (
+                    <>
+                      <h2 className="text-2xl font-bold">{selectedIntern.name} {selectedIntern.surname}</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Работает с {new Date(selectedIntern.createdAt).toLocaleDateString('ru-RU', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge className={`
+                          ${getEfficiencyLevel(selectedIntern).color === 'purple' ? 'bg-purple-100 text-purple-700 border-purple-300' : ''}
+                          ${getEfficiencyLevel(selectedIntern).color === 'blue' ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}
+                          ${getEfficiencyLevel(selectedIntern).color === 'green' ? 'bg-green-100 text-green-700 border-green-300' : ''}
+                          ${getEfficiencyLevel(selectedIntern).color === 'yellow' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : ''}
+                          ${getEfficiencyLevel(selectedIntern).color === 'red' ? 'bg-red-100 text-red-700 border-red-300' : ''}
+                          ${getEfficiencyLevel(selectedIntern).color === 'gray' ? 'bg-gray-100 text-gray-700 border-gray-300' : ''}
+                        `}>
+                          {getEfficiencyLevel(selectedIntern).level}
+                        </Badge>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          value={editInternName}
+                          onChange={(e) => setEditInternName(e.target.value)}
+                          placeholder="Имя"
+                          className="flex-1"
+                        />
+                        <Input
+                          value={editInternSurname}
+                          onChange={(e) => setEditInternSurname(e.target.value)}
+                          placeholder="Фамилия"
+                          className="flex-1"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={updateInternInfo}
+                          className="bg-gradient-to-r from-green-600 to-green-500 text-white"
+                        >
+                          <Icon name="Check" size={14} className="mr-1" />
+                          Сохранить
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsEditingIntern(false)}
+                        >
+                          Отмена
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
+                {!isEditingIntern && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingIntern(true);
+                      setEditInternName(selectedIntern.name);
+                      setEditInternSurname(selectedIntern.surname);
+                    }}
+                    className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                  >
+                    <Icon name="Edit" size={16} />
+                  </Button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
