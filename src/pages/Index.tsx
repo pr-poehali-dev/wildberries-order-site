@@ -31,7 +31,13 @@ const Index = () => {
   const productNames = [
     'Футболка', 'Джинсы', 'Кроссовки', 'Платье', 'Куртка', 'Свитер', 'Рубашка', 'Юбка',
     'Шорты', 'Пальто', 'Кеды', 'Сумка', 'Рюкзак', 'Шапка', 'Шарф', 'Перчатки',
-    'Носки', 'Белье', 'Пижама', 'Спортивный костюм', 'Блузка', 'Брюки', 'Ремень', 'Очки'
+    'Носки', 'Белье', 'Пижама', 'Спортивный костюм', 'Блузка', 'Брюки', 'Ремень', 'Очки',
+    'Костюм', 'Толстовка', 'Ветровка', 'Ботинки', 'Сапоги', 'Туфли', 'Сандалии', 'Сланцы',
+    'Кардиган', 'Жилет', 'Бомбер', 'Парка', 'Дубленка', 'Костюм', 'Смокинг', 'Бандана',
+    'Кепка', 'Бейсболка', 'Платок', 'Галстук', 'Бабочка', 'Подтяжки', 'Кошелек', 'Портмоне',
+    'Чемодан', 'Дорожная сумка', 'Барсетка', 'Клатч', 'Спортивная сумка', 'Зонт', 'Часы', 'Браслет',
+    'Украшения', 'Серьги', 'Кольцо', 'Цепочка', 'Кулон', 'Брошь', 'Запонки', 'Зажим для галстука',
+    'Спортивные штаны', 'Леггинсы', 'Тренч', 'Духи', 'Косметичка', 'Чехол для телефона', 'Повербанк'
   ];
 
   const firstNames = ['Александр', 'Дмитрий', 'Иван', 'Сергей', 'Андрей', 'Алексей', 'Михаил', 'Владимир',
@@ -102,6 +108,7 @@ const Index = () => {
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [returnReason, setReturnReason] = useState('');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('wildberries_profile');
     if (saved) {
@@ -114,6 +121,7 @@ const Index = () => {
       address: 'Москва, ул. Ленина, 15',
     };
   });
+  const [tempProfileData, setTempProfileData] = useState(profileData);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -130,6 +138,7 @@ const Index = () => {
 
   const createOrder = () => {
     const items = generateRandomItems();
+    const itemCount = items.length;
     const newOrder: Order = {
       id: Date.now().toString(),
       customerName: generateRandomName(),
@@ -143,8 +152,8 @@ const Index = () => {
     setOrders([newOrder, ...orders]);
     
     toast({
-      title: 'Заказ создан',
-      description: `${newOrder.customerName} • ${items.length} товаров на ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
+      title: `Заказ создан • ${itemCount} товар${itemCount === 1 ? '' : itemCount < 5 ? 'а' : 'ов'}`,
+      description: `${newOrder.customerName} • ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
     });
   };
 
@@ -297,15 +306,24 @@ const Index = () => {
           <CardContent>
             <Tabs defaultValue="waiting" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="waiting" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
+                <TabsTrigger 
+                  value="waiting" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                >
                   <Icon name="Clock" size={16} className="mr-2" />
                   Ожидают ({waitingOrders.length})
                 </TabsTrigger>
-                <TabsTrigger value="issued" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
+                <TabsTrigger 
+                  value="issued" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                >
                   <Icon name="CheckCircle" size={16} className="mr-2" />
                   Выданные ({issuedOrders.length})
                 </TabsTrigger>
-                <TabsTrigger value="returned" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary">
+                <TabsTrigger 
+                  value="returned" 
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary transition-all duration-300 hover:scale-105 data-[state=active]:animate-bounce-in"
+                >
                   <Icon name="Undo2" size={16} className="mr-2" />
                   Возвраты ({returnedOrders.length})
                 </TabsTrigger>
@@ -633,23 +651,104 @@ const Index = () => {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+      <Dialog open={isProfileOpen} onOpenChange={(open) => {
+        setIsProfileOpen(open);
+        if (!open) setIsEditingProfile(false);
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl">Профиль сотрудника</DialogTitle>
+            <DialogTitle className="text-xl flex items-center justify-between">
+              Профиль сотрудника
+              {!isEditingProfile && (
+                <Button 
+                  onClick={() => {
+                    setIsEditingProfile(true);
+                    setTempProfileData(profileData);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-primary text-primary hover:bg-primary/10"
+                >
+                  <Icon name="Pencil" size={16} className="mr-2" />
+                  Редактировать
+                </Button>
+              )}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
-                <Icon name="User" className="text-white" size={40} />
+            {isEditingProfile ? (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Имя и фамилия</Label>
+                  <Input
+                    id="name"
+                    value={tempProfileData.name}
+                    onChange={(e) => setTempProfileData({ ...tempProfileData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="position">Должность</Label>
+                  <Input
+                    id="position"
+                    value={tempProfileData.position}
+                    onChange={(e) => setTempProfileData({ ...tempProfileData, position: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pvzNumber">Номер ПВЗ</Label>
+                  <Input
+                    id="pvzNumber"
+                    value={tempProfileData.pvzNumber}
+                    onChange={(e) => setTempProfileData({ ...tempProfileData, pvzNumber: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Адрес</Label>
+                  <Input
+                    id="address"
+                    value={tempProfileData.address}
+                    onChange={(e) => setTempProfileData({ ...tempProfileData, address: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      setProfileData(tempProfileData);
+                      setIsEditingProfile(false);
+                      toast({
+                        title: 'Профиль обновлен',
+                        description: 'Данные успешно сохранены',
+                      });
+                    }}
+                    className="flex-1 bg-gradient-to-r from-primary to-secondary"
+                  >
+                    <Icon name="Save" size={16} className="mr-2" />
+                    Сохранить
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setTempProfileData(profileData);
+                    }}
+                    variant="outline"
+                  >
+                    Отмена
+                  </Button>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-xl">{profileData.name}</h3>
-                <p className="text-sm text-muted-foreground">{profileData.position}</p>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center shadow-lg">
+                    <Icon name="User" className="text-white" size={40} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-xl">{profileData.name}</h3>
+                    <p className="text-sm text-muted-foreground">{profileData.position}</p>
+                  </div>
+                </div>
 
-            <div className="space-y-4">
+                <div className="space-y-4">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <Icon name="MapPin" size={18} className="text-primary" />
@@ -684,18 +783,20 @@ const Index = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Эффективность</p>
-                    <p className="text-2xl font-bold text-primary">
-                      {stats.total > 0 ? Math.round((stats.issued / stats.total) * 100) : 0}%
-                    </p>
+                  <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Эффективность</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {stats.total > 0 ? Math.round((stats.issued / stats.total) * 100) : 0}%
+                        </p>
+                      </div>
+                      <Icon name="TrendingUp" size={40} className="text-primary opacity-20" />
+                    </div>
                   </div>
-                  <Icon name="TrendingUp" size={40} className="text-primary opacity-20" />
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
