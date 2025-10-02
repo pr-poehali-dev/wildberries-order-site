@@ -528,6 +528,15 @@ const Index = () => {
                 <Badge className="ml-2 bg-purple-600 text-white">{interns.length}</Badge>
               )}
             </Button>
+
+            <Button 
+              onClick={withdrawCuratorBalance}
+              variant="outline"
+              className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white hover:scale-110 transition-all duration-500"
+            >
+              <Icon name="User" size={18} className="mr-2" />
+              Профиль
+            </Button>
             
             <Button 
               onClick={() => setIsSettingsOpen(true)}
@@ -728,6 +737,17 @@ const Index = () => {
                                 </DialogContent>
                               </Dialog>
                             )}
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsReturnDialogOpen(true);
+                              }}
+                              variant="outline"
+                              className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
+                            >
+                              <Icon name="Undo2" size={16} className="mr-2" />
+                              Возврат
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
