@@ -119,7 +119,11 @@ const Index = () => {
   const [profileData, setProfileData] = useState(() => {
     const saved = localStorage.getItem('wildberries_profile');
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return {
+        ...parsed,
+        salary: parsed.salary ?? 0,
+      };
     }
     return {
       name: 'Александр Иванов',
