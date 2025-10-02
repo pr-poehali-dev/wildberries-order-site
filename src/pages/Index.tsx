@@ -141,7 +141,14 @@ const Index = () => {
   const [interns, setInterns] = useState<Intern[]>(() => {
     const saved = localStorage.getItem('wildberries_interns');
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return parsed.map((intern: any) => ({
+        ...intern,
+        issuedOrders: intern.issuedOrders || 0,
+        returnedOrders: intern.returnedOrders || 0,
+        totalEarned: intern.totalEarned || 0,
+        warns: intern.warns || []
+      }));
     }
     return [];
   });
