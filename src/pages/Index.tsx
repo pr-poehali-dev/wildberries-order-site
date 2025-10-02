@@ -9,15 +9,52 @@ import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
 
+interface OrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 interface Order {
   id: string;
   customerName: string;
   barcode: string;
   status: 'waiting' | 'issued';
   createdAt: string;
+  items: OrderItem[];
+  totalPrice: number;
 }
 
 const Index = () => {
+  const productNames = [
+    'Футболка', 'Джинсы', 'Кроссовки', 'Платье', 'Куртка', 'Свитер', 'Рубашка', 'Юбка',
+    'Шорты', 'Пальто', 'Кеды', 'Сумка', 'Рюкзак', 'Шапка', 'Шарф', 'Перчатки',
+    'Носки', 'Белье', 'Пижама', 'Спортивный костюм', 'Блузка', 'Брюки', 'Ремень', 'Очки'
+  ];
+
+  const generateRandomItems = (): OrderItem[] => {
+    const itemCount = Math.floor(Math.random() * 50) + 1;
+    const items: OrderItem[] = [];
+    
+    for (let i = 0; i < itemCount; i++) {
+      const randomProduct = productNames[Math.floor(Math.random() * productNames.length)];
+      const quantity = Math.floor(Math.random() * 5) + 1;
+      const price = Math.floor(Math.random() * 5000) + 500;
+      
+      items.push({
+        name: randomProduct,
+        quantity,
+        price
+      });
+    }
+    
+    return items;
+  };
+
+  const calculateTotal = (items: OrderItem[]): number => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
   const [orders, setOrders] = useState<Order[]>([
     {
       id: '1',
@@ -25,6 +62,8 @@ const Index = () => {
       barcode: '8B0301927',
       status: 'waiting',
       createdAt: new Date().toISOString(),
+      items: generateRandomItems(),
+      totalPrice: 0,
     },
     {
       id: '2',
@@ -32,12 +71,16 @@ const Index = () => {
       barcode: '8B0301928',
       status: 'waiting',
       createdAt: new Date().toISOString(),
+      items: generateRandomItems(),
+      totalPrice: 0,
     },
-  ]);
+  ].map(order => ({ ...order, totalPrice: calculateTotal(order.items) })));
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newOrderName, setNewOrderName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const { toast } = useToast();
 
   const generateBarcode = () => {
@@ -54,12 +97,15 @@ const Index = () => {
       return;
     }
 
+    const items = generateRandomItems();
     const newOrder: Order = {
       id: Date.now().toString(),
       customerName: newOrderName,
       barcode: generateBarcode(),
       status: 'waiting',
       createdAt: new Date().toISOString(),
+      items,
+      totalPrice: calculateTotal(items),
     };
 
     setOrders([newOrder, ...orders]);
@@ -68,7 +114,7 @@ const Index = () => {
     
     toast({
       title: 'Заказ создан',
-      description: `Штрих-код: ${newOrder.barcode}`,
+      description: `${items.length} товаров на ${newOrder.totalPrice.toLocaleString('ru-RU')} ₽`,
     });
   };
 
@@ -231,15 +277,33 @@ const Index = () => {
                                   Ожидает
                                 </Badge>
                               </div>
+                              <div className="mt-2 text-sm">
+                                <span className="font-medium">{order.items.length} товаров</span>
+                                <span className="mx-2">•</span>
+                                <span className="font-bold text-primary">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
+                              </div>
                             </div>
                           </div>
-                          <Button 
-                            onClick={() => issueOrder(order.id)}
-                            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md"
-                          >
-                            <Icon name="Check" size={16} className="mr-2" />
-                            Выдать
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsDetailsOpen(true);
+                              }}
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary/10"
+                            >
+                              <Icon name="Eye" size={16} className="mr-2" />
+                              Состав
+                            </Button>
+                            <Button 
+                              onClick={() => issueOrder(order.id)}
+                              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 shadow-md"
+                            >
+                              <Icon name="Check" size={16} className="mr-2" />
+                              Выдать
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -273,7 +337,24 @@ const Index = () => {
                                 Выдан
                               </Badge>
                             </div>
+                            <div className="mt-2 text-sm">
+                              <span className="font-medium">{order.items.length} товаров</span>
+                              <span className="mx-2">•</span>
+                              <span className="font-bold text-green-600">{order.totalPrice.toLocaleString('ru-RU')} ₽</span>
+                            </div>
                           </div>
+                          <Button 
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsDetailsOpen(true);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-green-500 text-green-600 hover:bg-green-50"
+                          >
+                            <Icon name="Eye" size={16} className="mr-2" />
+                            Состав
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -284,6 +365,71 @@ const Index = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Состав заказа</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div className="border-b pb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
+                    <Icon name="User" className="text-white" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedOrder.customerName}</h3>
+                    <p className="text-sm text-muted-foreground font-mono">{selectedOrder.barcode}</p>
+                  </div>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={selectedOrder.status === 'waiting' 
+                    ? 'border-orange-500 text-orange-600' 
+                    : 'border-green-500 text-green-600'}
+                >
+                  {selectedOrder.status === 'waiting' ? 'Ожидает выдачи' : 'Выдан'}
+                </Badge>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Icon name="ShoppingBag" size={18} />
+                  Товары ({selectedOrder.items.length})
+                </h4>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {selectedOrder.items.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="flex justify-between items-center p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {item.quantity} шт × {item.price.toLocaleString('ru-RU')} ₽
+                        </p>
+                      </div>
+                      <div className="font-semibold text-primary">
+                        {(item.quantity * item.price).toLocaleString('ru-RU')} ₽
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center text-lg">
+                  <span className="font-semibold">Итого:</span>
+                  <span className="font-bold text-2xl text-primary">
+                    {selectedOrder.totalPrice.toLocaleString('ru-RU')} ₽
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
