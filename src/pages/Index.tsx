@@ -178,6 +178,11 @@ const Index = () => {
   const [isEditingIntern, setIsEditingIntern] = useState(false);
   const [editInternName, setEditInternName] = useState('');
   const [editInternSurname, setEditInternSurname] = useState('');
+  
+  const [isInternMode, setIsInternMode] = useState(false);
+  const [internModeCode, setInternModeCode] = useState<string | null>(null);
+  const [isExitCodeDialogOpen, setIsExitCodeDialogOpen] = useState(false);
+  const [exitCodeInput, setExitCodeInput] = useState('');
 
   const [appTheme, setAppTheme] = useState({
     primaryColor: '#8b5cf6',
@@ -453,6 +458,40 @@ const Index = () => {
     }
   };
 
+  const generateExitCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const enableInternMode = () => {
+    const code = generateExitCode();
+    setInternModeCode(code);
+    setIsInternMode(true);
+    toast({
+      title: 'Режим стажёра активирован',
+      description: `Код для выхода: ${code}`,
+      duration: 10000,
+    });
+  };
+
+  const disableInternMode = () => {
+    if (exitCodeInput === internModeCode) {
+      setIsInternMode(false);
+      setInternModeCode(null);
+      setExitCodeInput('');
+      setIsExitCodeDialogOpen(false);
+      toast({
+        title: 'Режим куратора',
+        description: 'Вы вернулись в режим куратора',
+      });
+    } else {
+      toast({
+        title: 'Неверный код',
+        description: 'Попробуйте снова',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const addWarnToIntern = () => {
     if (!selectedIntern || !warnReason.trim()) {
       toast({
@@ -537,73 +576,97 @@ const Index = () => {
             <p className="text-gray-600 mt-2">Система управления пунктом выдачи заказов</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Dialog open={isBulkOrderOpen} onOpenChange={setIsBulkOrderOpen}>
-              <DialogTrigger asChild>
-                <Button className={`bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500 ${buttonAnimation}`}>
-                  <Icon name="PackagePlus" size={18} className="mr-2" />
-                  Создать заказы
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Массовое создание заказов</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-6 py-4">
-                  <div className="space-y-3">
-                    <Label>Количество заказов: {bulkOrderCount}</Label>
-                    <Slider
-                      value={[bulkOrderCount]}
-                      onValueChange={(value) => setBulkOrderCount(value[0])}
-                      min={1}
-                      max={100}
-                      step={1}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>1 заказ</span>
-                      <span>100 заказов</span>
+            {!isInternMode && (
+              <>
+                <Dialog open={isBulkOrderOpen} onOpenChange={setIsBulkOrderOpen}>
+                  <DialogTrigger asChild>
+                    <Button className={`bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500 ${buttonAnimation}`}>
+                      <Icon name="PackagePlus" size={18} className="mr-2" />
+                      Создать заказы
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Массовое создание заказов</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 py-4">
+                      <div className="space-y-3">
+                        <Label>Количество заказов: {bulkOrderCount}</Label>
+                        <Slider
+                          value={[bulkOrderCount]}
+                          onValueChange={(value) => setBulkOrderCount(value[0])}
+                          min={1}
+                          max={100}
+                          step={1}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>1 заказ</span>
+                          <span>100 заказов</span>
+                        </div>
+                      </div>
+                      <Button 
+                        onClick={createBulkOrders}
+                        className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600"
+                      >
+                        <Icon name="Zap" size={18} className="mr-2" />
+                        Создать {bulkOrderCount} {bulkOrderCount === 1 ? 'заказ' : bulkOrderCount < 5 ? 'заказа' : 'заказов'}
+                      </Button>
                     </div>
-                  </div>
-                  <Button 
-                    onClick={createBulkOrders}
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600"
-                  >
-                    <Icon name="Zap" size={18} className="mr-2" />
-                    Создать {bulkOrderCount} {bulkOrderCount === 1 ? 'заказ' : bulkOrderCount < 5 ? 'заказа' : 'заказов'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <Button 
-              onClick={() => setIsInternsOpen(true)}
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500 relative"
-            >
-              <Icon name="Users" size={18} className="mr-2" />
-              Стажёры
-              {interns.length > 0 && (
-                <Badge className="ml-2 bg-purple-600 text-white">{interns.length}</Badge>
-              )}
-            </Button>
+                  </DialogContent>
+                </Dialog>
+                
+                <Button 
+                  onClick={() => setIsInternsOpen(true)}
+                  variant="outline"
+                  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500 relative"
+                >
+                  <Icon name="Users" size={18} className="mr-2" />
+                  Стажёры
+                  {interns.length > 0 && (
+                    <Badge className="ml-2 bg-purple-600 text-white">{interns.length}</Badge>
+                  )}
+                </Button>
 
-            <Button 
-              onClick={() => setIsCuratorProfileOpen(true)}
-              variant="outline"
-              className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white hover:scale-110 transition-all duration-500"
-            >
-              <Icon name="User" size={18} className="mr-2" />
-              Профиль
-            </Button>
-            
-            <Button 
-              onClick={() => setIsSettingsOpen(true)}
-              variant="outline"
-              className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
-            >
-              <Icon name="Settings" size={18} className="mr-2" />
-              Настройки
-            </Button>
+                <Button 
+                  onClick={() => setIsCuratorProfileOpen(true)}
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white hover:scale-110 transition-all duration-500"
+                >
+                  <Icon name="User" size={18} className="mr-2" />
+                  Профиль
+                </Button>
+              </>
+            )}
+
+            {isInternMode ? (
+              <Button 
+                onClick={() => setIsExitCodeDialogOpen(true)}
+                className="bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-700 hover:to-orange-600 hover:scale-110 transition-all duration-500"
+              >
+                <Icon name="LogOut" size={18} className="mr-2" />
+                Выйти из режима стажёра
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  onClick={enableInternMode}
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 hover:scale-110 transition-all duration-500"
+                >
+                  <Icon name="UserCheck" size={18} className="mr-2" />
+                  Режим стажёра
+                </Button>
+                
+                <Button 
+                  onClick={() => setIsSettingsOpen(true)}
+                  variant="outline"
+                  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white hover:scale-110 transition-all duration-500"
+                >
+                  <Icon name="Settings" size={18} className="mr-2" />
+                  Настройки
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -746,66 +809,113 @@ const Index = () => {
                               <Icon name="Eye" size={16} className="mr-2" />
                               Состав
                             </Button>
-                            <Button 
-                              onClick={() => issueOrder(order.id, 'curator')}
-                              className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500"
-                            >
-                              <Icon name="Check" size={16} className="mr-2" />
-                              Выдать
-                            </Button>
-                            {interns.length > 0 && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button 
-                                    variant="outline"
-                                    className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-500"
-                                  >
-                                    <Icon name="Users" size={16} className="mr-2" />
-                                    Стажёр
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Выдать заказ за стажёра</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-3">
-                                    {interns.map(intern => (
-                                      <div key={intern.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div>
-                                          <p className="font-medium">{intern.name} {intern.surname}</p>
-                                          <p className="text-sm text-muted-foreground">Баланс: {intern.salary.toLocaleString('ru-RU')} ₽</p>
+                            
+                            {isInternMode ? (
+                              interns.length > 0 && (
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button 
+                                      className="bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-md hover:scale-110 transition-all duration-500"
+                                    >
+                                      <Icon name="UserCheck" size={16} className="mr-2" />
+                                      Выбрать стажёра
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Выдать заказ за стажёра</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-3">
+                                      {interns.map(intern => (
+                                        <div key={intern.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                          <div>
+                                            <p className="font-medium">{intern.name} {intern.surname}</p>
+                                            <p className="text-sm text-muted-foreground">Баланс: {intern.salary.toLocaleString('ru-RU')} ₽</p>
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <Button
+                                              size="sm"
+                                              onClick={() => {
+                                                issueOrder(order.id, intern.id);
+                                                const closeBtn = document.querySelector('[data-state="open"]')?.querySelector('button');
+                                                if (closeBtn instanceof HTMLElement) closeBtn.click();
+                                              }}
+                                              className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
+                                            >
+                                              <Icon name="Check" size={14} className="mr-1" />
+                                              Выдать
+                                            </Button>
+                                          </div>
                                         </div>
-                                        <div className="flex gap-2">
-                                          <Button
-                                            size="sm"
-                                            onClick={() => {
-                                              issueOrder(order.id, intern.id);
-                                              const closeBtn = document.querySelector('[data-state="open"]')?.querySelector('button');
-                                              if (closeBtn instanceof HTMLElement) closeBtn.click();
-                                            }}
-                                            className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
-                                          >
-                                            <Icon name="Check" size={14} className="mr-1" />
-                                            Выдать
-                                          </Button>
-                                        </div>
+                                      ))}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              )
+                            ) : (
+                              <>
+                                <Button 
+                                  onClick={() => issueOrder(order.id, 'curator')}
+                                  className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-700 hover:to-purple-600 shadow-md hover:scale-110 transition-all duration-500"
+                                >
+                                  <Icon name="Check" size={16} className="mr-2" />
+                                  Выдать
+                                </Button>
+                                {interns.length > 0 && (
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="outline"
+                                        className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:scale-110 transition-all duration-500"
+                                      >
+                                        <Icon name="Users" size={16} className="mr-2" />
+                                        Стажёр
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Выдать заказ за стажёра</DialogTitle>
+                                      </DialogHeader>
+                                      <div className="space-y-3">
+                                        {interns.map(intern => (
+                                          <div key={intern.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                            <div>
+                                              <p className="font-medium">{intern.name} {intern.surname}</p>
+                                              <p className="text-sm text-muted-foreground">Баланс: {intern.salary.toLocaleString('ru-RU')} ₽</p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                  issueOrder(order.id, intern.id);
+                                                  const closeBtn = document.querySelector('[data-state="open"]')?.querySelector('button');
+                                                  if (closeBtn instanceof HTMLElement) closeBtn.click();
+                                                }}
+                                                className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600"
+                                              >
+                                                <Icon name="Check" size={14} className="mr-1" />
+                                                Выдать
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
+                                    </DialogContent>
+                                  </Dialog>
+                                )}
+                                <Button 
+                                  onClick={() => {
+                                    setSelectedOrder(order);
+                                    setIsReturnDialogOpen(true);
+                                  }}
+                                  variant="outline"
+                                  className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
+                                >
+                                  <Icon name="Undo2" size={16} className="mr-2" />
+                                  Возврат
+                                </Button>
+                              </>
                             )}
-                            <Button 
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setIsReturnDialogOpen(true);
-                              }}
-                              variant="outline"
-                              className="border-red-500 text-red-600 hover:bg-red-50 hover:scale-110 transition-all duration-500"
-                            >
-                              <Icon name="Undo2" size={16} className="mr-2" />
-                              Возврат
-                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -1783,6 +1893,58 @@ const Index = () => {
                 className="flex-1"
               >
                 Закрыть
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isExitCodeDialogOpen} onOpenChange={setIsExitCodeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="Lock" size={24} />
+              Выход из режима стажёра
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-orange-50 border-2 border-orange-200 rounded-xl">
+              <p className="text-sm text-orange-900">
+                Для выхода из режима стажёра введите код, который был показан при входе
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="exitCode">Код выхода</Label>
+              <Input
+                id="exitCode"
+                type="text"
+                placeholder="Введите 6-значный код"
+                value={exitCodeInput}
+                onChange={(e) => setExitCodeInput(e.target.value)}
+                maxLength={6}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={disableInternMode}
+                className="flex-1 bg-gradient-to-r from-green-600 to-green-500 text-white"
+              >
+                <Icon name="Unlock" size={16} className="mr-2" />
+                Подтвердить
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsExitCodeDialogOpen(false);
+                  setExitCodeInput('');
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Отмена
               </Button>
             </div>
           </div>
