@@ -83,11 +83,31 @@ const Index = () => {
     'Шорты', 'Пальто', 'Кеды', 'Сумка', 'Рюкзак', 'Шапка', 'Шарф', 'Перчатки',
     'Носки', 'Белье', 'Пижама', 'Спортивный костюм', 'Блузка', 'Брюки', 'Ремень', 'Очки',
     'Костюм', 'Толстовка', 'Ветровка', 'Ботинки', 'Сапоги', 'Туфли', 'Сандалии', 'Сланцы',
-    'Кардиган', 'Жилет', 'Бомбер', 'Парка', 'Дубленка', 'Костюм', 'Смокинг', 'Бандана',
+    'Кардиган', 'Жилет', 'Бомбер', 'Парка', 'Дубленка', 'Смокинг', 'Бандана',
     'Кепка', 'Бейсболка', 'Платок', 'Галстук', 'Бабочка', 'Подтяжки', 'Кошелек', 'Портмоне',
     'Чемодан', 'Дорожная сумка', 'Барсетка', 'Клатч', 'Спортивная сумка', 'Зонт', 'Часы', 'Браслет',
     'Украшения', 'Серьги', 'Кольцо', 'Цепочка', 'Кулон', 'Брошь', 'Запонки', 'Зажим для галстука',
-    'Спортивные штаны', 'Леггинсы', 'Тренч', 'Духи', 'Косметичка', 'Чехол для телефона', 'Повербанк'
+    'Спортивные штаны', 'Леггинсы', 'Тренч', 'Духи', 'Косметичка', 'Чехол для телефона', 'Повербанк',
+    'Игрушка мягкая', 'Конструктор', 'Кукла', 'Машинка', 'Пазл', 'Настольная игра', 'Мяч',
+    'Книга', 'Блокнот', 'Ручка', 'Карандаш', 'Маркер', 'Тетрадь', 'Пенал', 'Ластик',
+    'Телефон', 'Наушники', 'Колонка', 'Умные часы', 'Фитнес-браслет', 'Планшет', 'Ноутбук',
+    'Клавиатура', 'Мышь', 'Веб-камера', 'Микрофон', 'USB кабель', 'Адаптер', 'Карта памяти',
+    'Посуда', 'Кружка', 'Тарелка', 'Набор столовых приборов', 'Термос', 'Бутылка для воды',
+    'Постельное белье', 'Подушка', 'Одеяло', 'Плед', 'Полотенце', 'Коврик для ванной',
+    'Лампа', 'Светильник', 'Гирлянда', 'Свеча', 'Ваза', 'Рамка для фото', 'Зеркало',
+    'Косметика', 'Крем для рук', 'Шампунь', 'Гель для душа', 'Маска для лица', 'Помада',
+    'Лак для ногтей', 'Тени', 'Тушь', 'Расческа', 'Фен', 'Электробритва', 'Триммер',
+    'Посудомоечная губка', 'Средство для мытья посуды', 'Стиральный порошок', 'Освежитель воздуха',
+    'Спортивный инвентарь', 'Гантели', 'Коврик для йоги', 'Скакалка', 'Эспандер', 'Бутылка спортивная',
+    'Палатка', 'Спальный мешок', 'Рюкзак туристический', 'Термокружка', 'Фонарик', 'Компас',
+    'Детская коляска', 'Автокресло', 'Соска', 'Бутылочка', 'Подгузники', 'Слинг',
+    'Корм для животных', 'Игрушка для собак', 'Когтеточка', 'Миска', 'Поводок', 'Лоток',
+    'Семена', 'Горшок для цветов', 'Удобрение', 'Лейка', 'Садовые перчатки', 'Секатор',
+    'Инструменты', 'Отвертка', 'Молоток', 'Гаечный ключ', 'Плоскогубцы', 'Дрель', 'Шуруповерт',
+    'Елочные игрушки', 'Новогодняя гирлянда', 'Маскарадный костюм', 'Воздушные шары', 'Подарочная упаковка',
+    'Велосипед', 'Самокат', 'Скейтборд', 'Ролики', 'Защита для роликов', 'Шлем',
+    'Гитара', 'Укулеле', 'Синтезатор', 'Микрофон караоке', 'Медиатор', 'Струны',
+    'Картина', 'Постер', 'Наклейки', 'Магнит на холодильник', 'Брелок', 'Значок'
   ];
 
   const maleFirstNames = ['Александр', 'Дмитрий', 'Иван', 'Сергей', 'Андрей', 'Алексей', 'Михаил', 'Владимир'];
@@ -108,13 +128,13 @@ const Index = () => {
   };
 
   const generateRandomItems = (count?: number): OrderItem[] => {
-    const itemCount = count || Math.floor(Math.random() * 50) + 1;
+    const itemCount = count || Math.floor(Math.random() * 10) + 1;
     const items: OrderItem[] = [];
     
     for (let i = 0; i < itemCount; i++) {
       const randomProduct = productNames[Math.floor(Math.random() * productNames.length)];
-      const quantity = Math.floor(Math.random() * 5) + 1;
-      const price = Math.floor(Math.random() * 5000) + 500;
+      const quantity = Math.floor(Math.random() * 3) + 1;
+      const price = Math.floor(Math.random() * 1500) + 100;
       
       items.push({
         name: randomProduct,
@@ -180,9 +200,24 @@ const Index = () => {
   const [editInternSurname, setEditInternSurname] = useState('');
   
   const [isInternMode, setIsInternMode] = useState(false);
-  const [internModeCode, setInternModeCode] = useState<string | null>(null);
+  const [internModeCode, setInternModeCode] = useState<string | null>(() => {
+    const saved = localStorage.getItem('wildberries_intern_code');
+    return saved || null;
+  });
   const [isExitCodeDialogOpen, setIsExitCodeDialogOpen] = useState(false);
   const [exitCodeInput, setExitCodeInput] = useState('');
+  const [isSetCodeDialogOpen, setIsSetCodeDialogOpen] = useState(false);
+  const [newCodeInput, setNewCodeInput] = useState('');
+  
+  const [curatorName, setCuratorName] = useState<string>(() => {
+    const saved = localStorage.getItem('wildberries_curator_name');
+    return saved || 'Куратор';
+  });
+  const [isEditingCurator, setIsEditingCurator] = useState(false);
+  const [editCuratorName, setEditCuratorName] = useState('');
+  
+  const [isShiftActive, setIsShiftActive] = useState(false);
+  const [shiftStartTime, setShiftStartTime] = useState<string | null>(null);
 
   const [appTheme, setAppTheme] = useState({
     primaryColor: '#8b5cf6',
@@ -202,6 +237,16 @@ const Index = () => {
   useEffect(() => {
     localStorage.setItem('wildberries_curator_balance', curatorBalance.toString());
   }, [curatorBalance]);
+
+  useEffect(() => {
+    if (internModeCode) {
+      localStorage.setItem('wildberries_intern_code', internModeCode);
+    }
+  }, [internModeCode]);
+
+  useEffect(() => {
+    localStorage.setItem('wildberries_curator_name', curatorName);
+  }, [curatorName]);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--primary-color', appTheme.primaryColor);
@@ -458,25 +503,41 @@ const Index = () => {
     }
   };
 
-  const generateExitCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+  const enableInternMode = () => {
+    if (!internModeCode) {
+      setIsSetCodeDialogOpen(true);
+    } else {
+      setIsInternMode(true);
+      toast({
+        title: 'Режим стажёра активирован',
+        description: 'Код для выхода сохранён',
+      });
+    }
   };
 
-  const enableInternMode = () => {
-    const code = generateExitCode();
-    setInternModeCode(code);
-    setIsInternMode(true);
-    toast({
-      title: 'Режим стажёра активирован',
-      description: `Код для выхода: ${code}`,
-      duration: 10000,
-    });
+  const setInternCode = () => {
+    if (newCodeInput.length === 6 && /^\d+$/.test(newCodeInput)) {
+      setInternModeCode(newCodeInput);
+      setIsInternMode(true);
+      setIsSetCodeDialogOpen(false);
+      setNewCodeInput('');
+      toast({
+        title: 'Код установлен',
+        description: 'Режим стажёра активирован. Запомните код для выхода!',
+        duration: 10000,
+      });
+    } else {
+      toast({
+        title: 'Ошибка',
+        description: 'Код должен состоять из 6 цифр',
+        variant: 'destructive',
+      });
+    }
   };
 
   const disableInternMode = () => {
     if (exitCodeInput === internModeCode) {
       setIsInternMode(false);
-      setInternModeCode(null);
       setExitCodeInput('');
       setIsExitCodeDialogOpen(false);
       toast({
@@ -490,6 +551,46 @@ const Index = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const updateCuratorName = () => {
+    if (!editCuratorName.trim()) {
+      toast({
+        title: 'Ошибка',
+        description: 'Введите имя',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setCuratorName(editCuratorName);
+    setIsEditingCurator(false);
+    toast({
+      title: 'Профиль обновлен',
+      description: editCuratorName,
+    });
+  };
+
+  const startShift = () => {
+    setIsShiftActive(true);
+    setShiftStartTime(new Date().toISOString());
+    toast({
+      title: 'Смена начата',
+      description: `${new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`,
+    });
+  };
+
+  const endShift = () => {
+    setIsShiftActive(false);
+    if (shiftStartTime) {
+      const start = new Date(shiftStartTime);
+      const end = new Date();
+      const duration = Math.floor((end.getTime() - start.getTime()) / 1000 / 60);
+      toast({
+        title: 'Смена завершена',
+        description: `Длительность: ${duration} минут`,
+      });
+    }
+    setShiftStartTime(null);
   };
 
   const addWarnToIntern = () => {
@@ -636,6 +737,24 @@ const Index = () => {
                   <Icon name="User" size={18} className="mr-2" />
                   Профиль
                 </Button>
+
+                {isShiftActive ? (
+                  <Button 
+                    onClick={endShift}
+                    className="bg-gradient-to-r from-red-600 to-red-500 text-white hover:from-red-700 hover:to-red-600 hover:scale-110 transition-all duration-500"
+                  >
+                    <Icon name="Clock" size={18} className="mr-2" />
+                    Закончить смену
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={startShift}
+                    className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-700 hover:to-green-600 hover:scale-110 transition-all duration-500"
+                  >
+                    <Icon name="Play" size={18} className="mr-2" />
+                    Начать смену
+                  </Button>
+                )}
               </>
             )}
 
@@ -1803,14 +1922,57 @@ const Index = () => {
                 <Icon name="Crown" className="text-white" size={32} />
               </div>
               <div className="flex-1">
-                <h2 className="text-2xl font-bold">Куратор ПВЗ</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Главный менеджер пункта выдачи
-                </p>
-                <Badge className="mt-2 bg-purple-100 text-purple-700 border-purple-300">
-                  Администратор
-                </Badge>
+                {!isEditingCurator ? (
+                  <>
+                    <h2 className="text-2xl font-bold">{curatorName}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Главный менеджер пункта выдачи
+                    </p>
+                    <Badge className="mt-2 bg-purple-100 text-purple-700 border-purple-300">
+                      Администратор
+                    </Badge>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <Input
+                      value={editCuratorName}
+                      onChange={(e) => setEditCuratorName(e.target.value)}
+                      placeholder="Имя куратора"
+                      className="text-lg font-bold"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={updateCuratorName}
+                        className="bg-gradient-to-r from-green-600 to-green-500 text-white"
+                      >
+                        <Icon name="Check" size={14} className="mr-1" />
+                        Сохранить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditingCurator(false)}
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+              {!isEditingCurator && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditingCurator(true);
+                    setEditCuratorName(curatorName);
+                  }}
+                  className="border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                >
+                  <Icon name="Edit" size={16} />
+                </Button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1940,6 +2102,61 @@ const Index = () => {
                 onClick={() => {
                   setIsExitCodeDialogOpen(false);
                   setExitCodeInput('');
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Отмена
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSetCodeDialogOpen} onOpenChange={setIsSetCodeDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Icon name="KeyRound" size={24} />
+              Установка кода для режима стажёра
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+              <p className="text-sm text-blue-900 font-semibold mb-2">
+                Установите постоянный код для выхода из режима стажёра
+              </p>
+              <p className="text-xs text-blue-700">
+                Этот код будет сохранён навсегда и потребуется для выхода из режима стажёра. Запомните его!
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newCode">Придумайте 6-значный код</Label>
+              <Input
+                id="newCode"
+                type="text"
+                placeholder="Введите 6 цифр"
+                value={newCodeInput}
+                onChange={(e) => setNewCodeInput(e.target.value.replace(/\D/g, ''))}
+                maxLength={6}
+                className="text-center text-2xl tracking-widest"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={setInternCode}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white"
+              >
+                <Icon name="Lock" size={16} className="mr-2" />
+                Установить код
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsSetCodeDialogOpen(false);
+                  setNewCodeInput('');
                 }}
                 variant="outline"
                 className="flex-1"
